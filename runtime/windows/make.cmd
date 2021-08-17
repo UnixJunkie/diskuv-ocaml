@@ -1,0 +1,147 @@
+@ECHO OFF
+
+SETLOCAL ENABLEEXTENSIONS
+
+SET DKMAKE_CALLING_DIR=%CD%
+
+REM ---------------------------------------------
+REM Command file for running Makefile using MSYS2
+REM ---------------------------------------------
+REM
+REM Q: Why MSYS2 rather than Cygwin?
+REM Ans: MSYS2 environment is supported in CMake as a first-class citizen. Cygwin is not.
+REM
+REM Q: Why not use the standard MSYS2 launchers?
+REM Ans: We don't like the standard MSYS2 launchers at https://www.msys2.org/wiki/Launchers/
+REM because they launch a new window. This is very intrusive to the development experience.
+REM Of course the launchers are useful since sometimes the Windows Console is very messed,
+REM but we haven't found that to be the case when running make.exe in Command Prompt
+REM or VS Code Terminal (PowerShell) or Windows Terminal (PowerShell).
+REM
+REM So we mimic as best we can the environment that the msys2.exe would give us in whatever
+REM console we were invoked from.
+REM
+REM Here is the real PATH on a standard Windows installation:
+REM   PATH=/usr/local/bin:/usr/bin:/bin:/opt/bin:/c/Windows/System32
+REM        :/c/Windows:/c/Windows/System32/Wbem
+REM        :/c/Windows/System32/WindowsPowerShell/v1.0/:/usr/bin/site_perl
+REM        :/usr/bin/vendor_perl:/usr/bin/core_perl
+REM
+REM Q: Why use the Windows Git executable when MSYS2 already provides one?
+REM Ans: Without a filesystem cache Git can be very very slow on Windows.
+REM Confer with https://github.com/msysgit/msysgit/wiki/Diagnosing-why-Git-is-so-slow#enable-the-filesystem-cache .
+REM MSYS does not (cannot?) take advantage of the filesystem cache that Git for Windows provides.
+REM So as long as the `git config core.fscache true` was run after `git clone XXX ; cd XXX` and
+REM we use Git for Windows executable then git will be fast.
+REM Oddly `git status` speed is important for Opam since it calls `git status` frequently. If
+REM Opam is running super slow, try `GIT_TRACE=1 git status` to see if your git is taking more than
+REM 100ms.
+REM Ans: Windows Git inside MSYS2 can let `git fetch` take advantage of Windows authentication. You
+REM may be prompted for username and password if you let MSYS2's /usr/bin/git try to figure out
+REM authentication.
+REM
+REM Important Notes:
+REM * We need to provide commonality between Unix builds and Windows builds. In
+REM   particular we need to give access to Windows CMake which can generate a MSYS2
+REM   build system as a first class citizen (although Ninja is better if the projects
+REM   support it).
+REM ==» So we'll add Windows CMake to the **front** of the PATH and also put CL.EXE.
+REM
+REM * Any variables we define here will appear inside the Makefile.
+REM ==» Use DKMAKE_INTERNAL_ as prefix for all variables.
+
+REM Find cygpath so we can convert Windows paths to Unix/Cygwin paths
+if not defined DKMAKE_INTERNAL_CYGPATH (
+	set "DKMAKE_INTERNAL_CYGPATH=%DiskuvOCamlHome%\tools\MSYS2\usr\bin\cygpath.exe"
+)
+
+%DKMAKE_INTERNAL_CYGPATH% --version >NUL 2>NUL
+if %ERRORLEVEL% neq 0 (
+	echo.
+	echo.The 'cygpath' command was not found. Make sure you have run
+	echo.the script 'scripts\setup\windows\install-world.ps1' once.
+	echo.
+	exit /b 1
+)
+
+REM Set DKMAKE_INTERNAL_DISKUVOCAMLHOME to something like /c/Users/user/AppData/Local/Programs/DiskuvOCaml/1/
+FOR /F "tokens=* USEBACKQ" %%F IN (`%%DKMAKE_INTERNAL_CYGPATH%% -au %DiskuvOCamlHome%`) DO (
+SET "DKMAKE_INTERNAL_DISKUVOCAMLHOME=%%F"
+)
+
+REM Find Powershell so we can add its directory to the PATH
+FOR /F "tokens=* USEBACKQ" %%F IN (`where.exe powershell.exe`) DO (
+SET "DKMAKE_INTERNAL_POWERSHELLEXE=%%F"
+)
+
+%DKMAKE_INTERNAL_POWERSHELLEXE% -NoLogo -Help >NUL 2>NUL
+if %ERRORLEVEL% neq 0 (
+	echo.
+	echo.The 'powershell.exe' command was not found. Make sure you have
+	echo.PowerShell installed.
+	echo.
+	exit /b 1
+)
+
+REM Find Git so we can add its directory to the PATH
+FOR /F "tokens=* USEBACKQ" %%F IN (`where.exe git.exe`) DO (
+SET "DKMAKE_INTERNAL_GITEXE=%%F"
+)
+
+%DKMAKE_INTERNAL_GITEXE% --version >NUL 2>NUL
+if %ERRORLEVEL% neq 0 (
+	echo.
+	echo.The 'git.exe' command was not found. Make sure you have
+	echo.Git for Windows installed.
+	echo.
+	exit /b 1
+)
+
+REM Set DKMAKE_INTERNAL_WINPATH to something like /c/WINDOWS/System32:/c/WINDOWS:/c/WINDOWS/System32/Wbem
+FOR /F "tokens=* USEBACKQ" %%F IN (`%%DKMAKE_INTERNAL_CYGPATH%% --path "%SYSTEMROOT%\System32;%SYSTEMROOT%;%SYSTEMROOT%\System32\Wbem"`) DO (
+SET "DKMAKE_INTERNAL_WINPATH=%%F"
+)
+
+REM Set DKMAKE_INTERNAL_POWERSHELLPATH to something like /c/WINDOWS/System32/WindowsPowerShell/v1.0/
+FOR /F "tokens=* USEBACKQ" %%F IN (`%%DKMAKE_INTERNAL_CYGPATH%% -au %DKMAKE_INTERNAL_POWERSHELLEXE%\..`) DO (
+SET "DKMAKE_INTERNAL_POWERSHELLPATH=%%F"
+)
+
+REM Set DKMAKE_INTERNAL_GITPATH to something like /c/Program Files/Git/cmd/
+FOR /F "tokens=* USEBACKQ" %%F IN (`%%DKMAKE_INTERNAL_CYGPATH%% -au %DKMAKE_INTERNAL_GITEXE%\..`) DO (
+SET "DKMAKE_INTERNAL_GITPATH=%%F"
+)
+
+REM Set DKMAKE_INTERNAL_MAKE
+REM We set MSYSTEM=MSYS environment variable to mimic the msys2.exe launcher https://www.msys2.org/wiki/MSYS2-introduction/
+if not defined DKMAKE_INTERNAL_MAKE (
+	SET DKMAKE_INTERNAL_MAKE=%DiskuvOCamlHome%\tools\MSYS2\usr\bin\env.exe ^
+		MSYSTEM=MSYS ^
+		MSYSTEM_CARCH=x86_64 ^
+		MSYSTEM_CHOST=x86_64-pc-msys ^
+		"PATH=%DKMAKE_INTERNAL_DISKUVOCAMLHOME%/bin:%DKMAKE_INTERNAL_DISKUVOCAMLHOME%/tools/opam:%DKMAKE_INTERNAL_DISKUVOCAMLHOME%/tools/ninja:%DKMAKE_INTERNAL_DISKUVOCAMLHOME%/tools/cmake/bin:%DKMAKE_INTERNAL_GITPATH%:/usr/bin:/bin:%DKMAKE_INTERNAL_WINPATH%:%DKMAKE_INTERNAL_POWERSHELLPATH%" ^
+		make
+)
+
+%DKMAKE_INTERNAL_MAKE% --version >NUL 2>NUL
+if %ERRORLEVEL% neq 0 (
+	echo.
+	echo.The 'make' command was not found. Make sure you have run
+	echo.the command 'scripts\setup\windows\install-world.ps1' once.
+	echo.
+	exit /b 1
+)
+
+REM Clear environment variables that will pollute the Makefile environment, especially for a clean environment in `.\make.cmd shell`
+set DKMAKE_INTERNAL_CYGPATH=
+set DKMAKE_INTERNAL_DISKUVOCAMLHOME=
+set DKMAKE_INTERNAL_WINPATH=
+set DKMAKE_INTERNAL_POWERSHELLEXE=
+set DKMAKE_INTERNAL_POWERSHELLPATH=
+set DKMAKE_INTERNAL_GITEXE=
+set DKMAKE_INTERNAL_GITPATH=
+
+%DKMAKE_INTERNAL_MAKE% "DKMAKE_CALLING_DIR=%DKMAKE_CALLING_DIR%" %*
+goto end
+
+:end

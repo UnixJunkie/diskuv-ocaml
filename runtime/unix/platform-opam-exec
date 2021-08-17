@@ -1,0 +1,217 @@
+#!/bin/bash
+# -------------------------------------------------------
+# platform-opam-exec [-b BUILDTYPE] [-s | -p PLATFORM] [--] install|clean|help|...
+#
+# PLATFORM=dev|linux_arm32v6|linux_arm32v7|windows_x86|...
+#
+#   The PLATFORM can be `dev` which means the dev platform using the native CPU architecture
+#   and system binaries for Opam from your development machine.
+#   Otherwise it is one of the "PLATFORMS" canonically defined in TOPDIR/Makefile.
+#
+# BUILDTYPE=Debug|Release|...
+#
+#   One of the "BUILDTYPES" canonically defined in TOPDIR/Makefile.
+#
+# The build is placed in build/$PLATFORM.
+# -------------------------------------------------------
+set -euf -o pipefail
+
+# ------------------
+# BEGIN Command line processing
+
+function usage () {
+    echo "Usage:" >&2
+    echo "    platform-opam-exec -h                                                         Display this help message" >&2
+    echo "    platform-opam-exec [-1] -p PLATFORM [--] install|clean|help|...               Run the opam command" >&2
+    echo "                                                                                  in the PLATFORM's active switch" >&2
+    echo "    platform-opam-exec [-1] -p PLATFORM -b BUILDTYPE [--] install|clean|help|...  Run the opam command" >&2
+    echo "                                                                                  in the PLATFORM's BUILDTYPE switch" >&2
+    echo "    platform-opam-exec [-1] -s [--] install|clean|help|...                        Run the opam command" >&2
+    echo "                                                                                  in the 'diskuv-system' switch" >&2
+    echo "Options:" >&2
+    echo "       -s: Select the 'diskuv-system' switch" >&2
+    echo "       -p PLATFORM: The target platform or 'dev'" >&2
+    echo "       -b BUILDTYPE: Optional. The build type. If specified adds --switch to opam" >&2
+    echo "Advanced Options:" >&2
+    echo "       -1 PREHOOK: If specified, the Bash statements will be 'eval'-d twice upon" >&2
+    echo "             entering the Build Sandbox _before_ any the opam command is run." >&2
+    echo "             It behaves similar to:" >&2
+    echo '               eval "the PREHOOK you gave" > /tmp/eval.sh' >&2
+    echo '               eval /tmp/eval.sh' >&2
+    echo '             Useful for setting environment variables (possibly from a script).' >&2
+}
+
+# no arguments should display usage
+if [[ "$#" -eq 0 ]]; then
+    usage
+    exit 1
+fi
+
+# Problem 1:
+#
+#   Opam (and Dune) do not like:
+#     opam --root abc --switch xyz exec ocaml
+#   Instead it expects:
+#     opam exec --root abc --switch xyz ocaml
+#   We want to inject `--root abc` and `--switch xyz` right after the subcommand but before
+#   any arg seperators like `--`.
+#   For example, we can't just add `--switch xyz` to the end of the command line
+#   because we wouldn't be able to support:
+#     opam exec something.exe -- --some-arg-for-something abc
+#   where the `--switch xyz` **must** go before `--`.
+#
+# Solution 1:
+#
+#   Any arguments that can go in 'opam --somearg somecommand' should be processed here
+#   and added to OPAM_OPTS. We'll parse 'somecommand ...' options in a second getopts loop.
+PLATFORM=
+BUILDTYPE=
+DISKUV_SYSTEM_SWITCH=OFF
+PREHOOK=
+while getopts ":h1:b:sp:" opt; do
+    case ${opt} in
+        h )
+            usage
+            exit 0
+        ;;
+        p )
+            PLATFORM=$OPTARG
+        ;;
+        b )
+            BUILDTYPE=$OPTARG
+        ;;
+        s )
+            DISKUV_SYSTEM_SWITCH=ON
+        ;;
+        1 )
+            PREHOOK=$OPTARG
+        ;;
+        \? )
+            echo "This is not an option: -$OPTARG" >&2
+            usage
+            exit 1
+        ;;
+    esac
+done
+shift $((OPTIND -1))
+
+if [[ -z "$PLATFORM" && "$DISKUV_SYSTEM_SWITCH" = OFF ]]; then
+    usage
+    exit 1
+fi
+
+if [[ "${1:-}" = "--" ]]; then # supports `platform-opam-exec ... -- --version`
+    shift
+fi
+
+# END Command line processing
+# ------------------
+
+DKMLDIR=$(dirname "$0")
+DKMLDIR=$(cd "$DKMLDIR"/../.. && pwd)
+
+# `diskuv-system` is the host architecture, so use `dev` as its platform
+if [[ "$DISKUV_SYSTEM_SWITCH" = ON ]]; then
+    PLATFORM=dev
+fi
+
+if [[ -n "${BUILDTYPE:-}" ]]; then
+    # shellcheck disable=SC1091
+    source "$DKMLDIR"/runtime/unix/_common_build.sh
+else
+    # shellcheck disable=SC1091
+    source "$DKMLDIR"/runtime/unix/_common_tool.sh
+fi
+
+# To be portable whether we build scripts in the container or not, we
+# change the directory to always be in the TOPDIR (just like the container
+# sets the directory to be /work mounted to TOPDIR)
+cd "$TOPDIR"
+
+# From here onwards everything should be run using RELATIVE PATHS ...
+# >>>>>>>>>
+
+# no subcommand should display help
+if [[ "$#" -eq 0 ]]; then
+    subcommand="help"
+else
+    subcommand=$1; shift
+fi
+
+OPAM_OPTS=()
+PLATFORM_EXEC_PRE="$PREHOOK"
+OPAM_ENV_STMT=
+
+# ------------
+# BEGIN --root
+
+# Set OPAMROOTDIR_BUILDHOST and OPAMROOTDIR_EXPAND
+set_opamrootdir
+
+# We check if the root exists before we add --root
+OPAM_ROOT_OPT=() # we have a separate array for --root since --root is mandatory for `opam init`
+if is_minimal_opam_root_present "$OPAMROOTDIR_BUILDHOST"; then
+    OPAM_ROOT_OPT+=( --root "$OPAMROOTDIR_EXPAND" )
+    # `--set-switch` will output the globally selected switch, if any.
+    OPAM_ENV_STMT='opam env --quiet --root "'$OPAMROOTDIR_EXPAND'" --set-root --set-switch'
+fi
+
+# END --root
+# ------------
+
+# ------------
+# BEGIN --switch
+
+# Q: What if there was no switch but there was a root?
+# Ans: This section would be skipped, and the earlier `opam env --root yyy --set-root` would have captured the environment with its OPAM_ENV_STMT.
+
+# Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND if there is a switch specified
+if [[ "$DISKUV_SYSTEM_SWITCH" = ON ]]; then
+    # Set $DiskuvOCamlHome and other vars
+    autodetect_dkmlvars
+
+    # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND of `diskuv-system` switch
+    set_opamswitchdir_of_system
+elif [[ -n "${BUILDDIR:-}" ]]; then
+    # set --switch only if BUILDTYPE (translated into BUILDDIR) has been set
+    install -d "$BUILDDIR"
+    if [[ -x /usr/bin/setfacl ]]; then /usr/bin/setfacl --remove-all --remove-default "$BUILDDIR"; fi
+
+    # Set OPAMROOTDIR_BUILDHOST, OPAMROOTDIR_EXPAND, OPAMSWITCHFINALDIR_BUILDHOST, OPAMSWITCHDIR_EXPAND
+    set_opamrootandswitchdir
+fi
+
+# We check if the switch exists before we add --switch. Otherwise `opam` will complain:
+#   [ERROR] The selected switch C:/source/xxx/build/dev/Debug is not installed.
+if [[ -n "${OPAMSWITCHFINALDIR_BUILDHOST:-}" && -n "${OPAMSWITCHDIR_EXPAND:-}" ]] && is_minimal_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
+    OPAM_OPTS+=( --switch "$OPAMSWITCHDIR_EXPAND" )
+    OPAM_ENV_STMT='opam env --quiet --root "'$OPAMROOTDIR_EXPAND'" --switch "'$OPAMSWITCHDIR_EXPAND'" --set-root --set-switch'
+fi
+
+# END --switch
+# ------------
+
+# We'll make a prehook so that `opam env --root yyy [--switch zzz] --set-root [--set-switch]` is automatically executed.
+# We compose prehooks by letting user-specified prehooks override our own. So user-specified prehooks go last so they can override the environment.
+if [[ -n "${PLATFORM_EXEC_PRE:-}" ]]; then PLATFORM_EXEC_PRE="; $PLATFORM_EXEC_PRE"; fi
+# shellcheck disable=SC2034 disable=SC2016
+PLATFORM_EXEC_PRE="${OPAM_ENV_STMT} ${PLATFORM_EXEC_PRE:-}"
+
+# -----------------------
+# Inject our options first, immediately after the subcommand
+
+set +u # workaround bash 'unbound variable' triggered on empty arrays
+case "$subcommand" in
+    help)
+        exec_in_platform opam help "$@"
+    ;;
+    init)
+        exec_in_platform opam init --root "$OPAMROOTDIR_EXPAND" "${OPAM_OPTS[@]}" "$@"
+    ;;
+    list)
+        COMPILATION=OFF exec_in_platform opam "$subcommand" "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
+    ;;
+    *)
+        exec_in_platform opam "$subcommand" "${OPAM_ROOT_OPT[@]}" "${OPAM_OPTS[@]}" "$@"
+    ;;
+esac

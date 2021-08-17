@@ -1,0 +1,4 @@
+{
+    "python.pythonPath": "${workspaceFolder}/contributors/envs",
+    "restructuredtext.confPath": "${workspaceFolder}/contributors"
+}

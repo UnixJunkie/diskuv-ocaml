@@ -1,0 +1,155 @@
+#!/bin/bash
+# --------------------------
+# within-sandbox [-b BUILDTYPE] -p PLATFORM command ...
+#
+# Analog of within-dev. Most of the same environment variables should be set albeit with different values.
+#
+# Note about mounting volumes:
+#   We never mount a directory inside another critical directory where we place other files
+#   because it is not well-defined how Docker behaves (_all_ of its versions and platforms).
+#   Example: mounting /home/user/.opam within critical directory /home/user/ is bad.
+#   Instead we mount in the `/` directory or some other mount exclusive directory like `/mnt`.
+#   You can always symlink inside /home/user/ or other essential directory to the mounted directory.
+# --------------------------
+set -euf -o pipefail
+
+# ------------------
+# BEGIN Command line processing
+
+function usage () {
+    echo "Usage:" >&2
+    echo "    within-sandbox -h                                 Display this help message." >&2
+    echo "    within-sandbox [-b] [-1] -p PLATFORM              Enter the Build Sandbox with an interactive bash shell." >&2
+    echo "    within-sandbox [-b] [-1] -p PLATFORM command ...  Run the command and any arguments in the Build Sandbox." >&2
+    echo "Options:" >&2
+    echo "       -p PLATFORM: The target platform (not 'dev') used. DK_TOOLS_DIR will be based on this" >&2
+    echo "       -b BUILDTYPE: If specified, will set DK_BUILD_DIR in the Build Sandbox" >&2
+    echo "Advanced Options:" >&2
+    echo "       -n: If specified, no compilation tools like vcvars64.bat are added to the environment." >&2
+    echo "             This can be a multi-second speedup on Windows." >&2
+    echo "       -1 PREHOOK: If specified, the Bash statements will be 'eval'-d twice upon" >&2
+    echo "             entering the Build Sandbox _before_ any other commands are run but" >&2
+    echo "             _after_ the PATH has been established." >&2
+    echo "             It behaves similar to:" >&2
+    echo '               eval "the PREHOOK you gave" > /tmp/eval.sh' >&2
+    echo '               eval /tmp/eval.sh' >&2
+    echo '             Useful for setting environment variables (possibly from a script).' >&2
+}
+
+# no arguments should display usage
+if [[ "$#" -eq 0 ]]; then
+    usage
+    exit 1
+fi
+
+PLATFORM=
+BUILDTYPE=
+PREHOOK=
+COMPILATION=ON
+while getopts ":hp:b:1:n" opt; do
+    case ${opt} in
+        h )
+            usage
+            exit 0
+        ;;
+        p )
+            PLATFORM=$OPTARG
+        ;;
+        b )
+            BUILDTYPE=$OPTARG
+        ;;
+        1 )
+            PREHOOK=$OPTARG
+        ;;
+        n )
+            COMPILATION=OFF
+        ;;
+        \? )
+            echo "This is not an option: -$OPTARG" >&2
+            usage
+            exit 1
+        ;;
+    esac
+done
+shift $((OPTIND -1))
+
+if [[ -z "$PLATFORM" ]]; then
+    usage
+    exit 1
+fi
+
+# END Command line processing
+# ------------------
+
+DKMLDIR=$(dirname "$0")
+DKMLDIR=$(cd "$DKMLDIR"/../.. && pwd)
+
+if [[ -n "${BUILDTYPE:-}" ]]; then
+    # shellcheck disable=SC1091
+    source "$DKMLDIR"/runtime/unix/_common_build.sh
+else
+    # shellcheck disable=SC1091
+    source "$DKMLDIR"/runtime/unix/_common_tool.sh
+fi
+
+# Use same technique of dockcross so we can let the developer see their own files with their own user/group
+# shellcheck disable=SC2034
+BUILDER_USER="$( id -un )"
+BUILDER_UID="$( id -u )"
+USER_IDS=(-e BUILDER_UID="$BUILDER_UID" -e BUILDER_GID="$( id -g )" -e BUILDER_USER="$BUILDER_USER" -e BUILDER_GROUP="$( id -gn )")
+
+# Essential Docker arguments.
+DOCKER_ARGS=(
+    # Mount TOPDIR as /work
+    -v "$TOPDIR":/opt/diskuv-ocaml-build-chroot/work
+    # use DK_xxx_DIR so no chance of conflict with any external programs. For example BUILDDIR is used within Esy.
+    --env DK_TOOLS_DIR="/work/$TOOLSDIR"
+    --env DK_TOOLSCOMMON_DIR="/work/$TOOLSCOMMONDIR"
+    # whether to get compilation tools into environment
+    --env SANDBOX_COMPILATION="$COMPILATION"
+)
+
+# Save bash history if user is not root
+if [[ "$BUILDER_UID" -ne 0 ]]; then
+    BH="$HOME"/.diskuv-ocaml.bash_history
+    if [[ ! -e $BH ]]; then
+        touch "$BH"
+    fi
+    DOCKER_ARGS+=(-v "$BH":/opt/diskuv-ocaml-build-chroot/mnt/bash_history)
+fi
+
+# Autodetect OPAMROOT and mount it if present
+if [[ -e "$TOPDIR/$OPAMROOT_IN_CONTAINER" ]]; then
+    DOCKER_ARGS+=(
+        -v "$TOPDIR/$OPAMROOT_IN_CONTAINER":/opt/diskuv-ocaml-build-chroot/mnt/opamroot
+    )
+fi
+
+# If and only if [-b BUILDDIR] specified
+if [[ -n "${BUILDTYPE:-}" ]]; then
+    DOCKER_ARGS+=(
+        --env DK_BUILD_DIR="/work/$BUILDDIR"
+    )
+fi
+
+# Detect or enable DKML_BUILD_TRACE
+DKML_BUILD_TRACE=${DKML_BUILD_TRACE:-ON}
+DOCKER_ARGS+=(
+    --env DKML_BUILD_TRACE="$DKML_BUILD_TRACE"
+)
+
+# Pass through any prehooks
+if [[ -n "$PREHOOK" ]]; then
+    # sandbox-entrypoint.sh will pick up the SANDBOX_PRE_HOOK and do `eval <(eval "$SANDBOX_PRE_HOOK")`.
+    DOCKER_ARGS+=(
+        --env SANDBOX_PRE_HOOK="$PREHOOK"
+    )
+fi
+
+if [[ "$DKML_BUILD_TRACE" = ON ]]; then set -x; fi
+exec docker run -it \
+    "${USER_IDS[@]}" \
+    "${DOCKER_ARGS[@]}" \
+    --privileged \
+    diskuv-ocaml/linux-build-"$PLATFORM" \
+    "$@"

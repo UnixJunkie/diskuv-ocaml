@@ -1,0 +1,157 @@
+#!/bin/bash
+# --------------------------
+# within-dev
+#
+# Analog of within-sandbox and sandbox-entrypoint.sh. Most of the same environment variables should be set albeit with different values.
+# --------------------------
+set -euf -o pipefail
+
+# ------------------
+# BEGIN Command line processing
+
+function usage () {
+    echo "Usage:" >&2
+    echo "    within-dev -h                          Display this help message." >&2
+    echo "    within-dev -h                          Display this help message." >&2
+    echo "    within-dev [-b BUILDTYPE]              Enter the dev platform with an interactive bash shell." >&2
+    echo "    within-dev [-b BUILDTYPE] command ...  Run the command and any arguments in the dev platform." >&2
+    echo "       -b BUILDTYPE: If specified, will set DK_BUILD_DIR in the dev platform" >&2
+    echo "Advanced Options:" >&2
+    echo "       -n: If specified, no compilation tools like vcvars64.bat are added to the environment." >&2
+    echo "             This can be a multi-second speedup on Windows." >&2
+    echo "       -1 PREHOOK: If specified, the Bash statements will be 'eval'-d twice upon" >&2
+    echo "             entering the Build Sandbox _before_ any other commands are run but" >&2
+    echo "             _after_ the PATH has been established." >&2
+    echo "             It behaves similar to:" >&2
+    echo '               eval "the PREHOOK you gave" > /tmp/eval.sh' >&2
+    echo '               eval /tmp/eval.sh' >&2
+    echo '             Useful for setting environment variables (possibly from a script).' >&2
+}
+
+# no arguments should display usage
+if [[ "$#" -eq 0 ]]; then
+    usage
+    exit 1
+fi
+
+# shellcheck disable=SC2034
+PLATFORM=dev
+BUILDTYPE=
+PREHOOK=
+COMPILATION=ON
+while getopts ":hb:1:n" opt; do
+    case ${opt} in
+        h )
+            usage
+            exit 0
+        ;;
+        b )
+            # shellcheck disable=SC2034
+            BUILDTYPE=$OPTARG
+        ;;
+        1 )
+            PREHOOK=$OPTARG
+        ;;
+        n )
+            COMPILATION=OFF
+        ;;
+        \? )
+            echo "This is not an option: -$OPTARG" >&2
+            usage
+            exit 1
+        ;;
+    esac
+done
+shift $((OPTIND -1))
+
+# END Command line processing
+# ------------------
+
+DKMLDIR=$(dirname "$0")
+DKMLDIR=$(cd "$DKMLDIR"/../.. && pwd)
+
+if [[ -n "${BUILDTYPE:-}" ]]; then
+    # shellcheck disable=SC1091
+    source "$DKMLDIR"/runtime/unix/_common_build.sh
+else
+    # shellcheck disable=SC1091
+    source "$DKMLDIR"/runtime/unix/_common_tool.sh
+fi
+
+# Essential environment values.
+ENV_ARGS=(
+    # use DK_xxx_DIR so no chance of conflict with any external programs. For example BUILDDIR is used within Esy.
+    DK_TOOLS_DIR="$TOPDIR/$TOOLSDIR"
+    DK_TOOLSCOMMON_DIR="$TOPDIR/$TOOLSCOMMONDIR"
+)
+
+# give builds access to tools
+ENV_PATH_FULL=
+ENV_PATH_PREFIX="$TOPDIR/$TOOLSDIR/local/bin"
+ENV_PATH_SUFFIX=
+
+# On Windows add C:\Windows\System32 to end of PATH
+if is_windows_build_machine; then
+    SYSTEM32=$(cygpath -au "$SYSTEMROOT"\\System32)
+    ENV_PATH_SUFFIX=":$SYSTEM32"
+fi
+
+# On Windows always disable the Automatic Unix ⟶ Windows Path Conversion
+# described at https://www.msys2.org/docs/filesystem-paths/ 
+disambiguate_filesystem_paths
+
+# If and only if [-b BUILDDIR] specified
+if [[ -n "${BUILDTYPE:-}" ]]; then
+    ENV_ARGS+=(
+        DK_BUILD_DIR="$TOPDIR/$BUILDDIR"
+    )
+fi
+
+# Autodetect DKMLVARS and add to PATH
+autodetect_dkmlvars || true
+if [[ -n "${DiskuvOCamlBinaryPaths:-}" ]]; then
+    ENV_PATH_PREFIX="$DiskuvOCamlBinaryPaths:$ENV_PATH_PREFIX"
+fi
+
+# Autodetect VCVARS on Windows; do nothing on Unix.
+# `autodetect_vcvars` does tricky things with ENV_PATH_PREFIX and
+# ENV_PATH_FULL, so we populate set PATH immediately. The PATH will
+# be available for the prehooks (if any), so we do not use ENV_ARGS
+# for the PATH.
+if [[ "$COMPILATION" = ON ]]; then
+    autodetect_vcvars || true
+    if [[ -n "${ENV_PATH_FULL:-}" ]]; then
+        PATH="$ENV_PATH_FULL$ENV_PATH_SUFFIX:/usr/bin:/bin"
+    else
+        PATH="$ENV_PATH_PREFIX:$PATH$ENV_PATH_SUFFIX:/usr/bin:/bin"
+    fi
+fi
+
+# run any prehooks (the PATH has already been setup)
+if [[ -n "$PREHOOK" ]]; then
+    if is_windows_build_machine; then CYGPATH_LOC=$(which cygpath); else CYGPATH_LOC=; fi
+    if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then echo "+ [eval] $PREHOOK" >&2; fi
+    # shellcheck disable=SC1090
+    source <(eval "$PREHOOK")
+    # At this point the PREHOOK may have set the PATH to be a Windows style path (ex. `opam env`).
+    # So subsequent commands like `env`, `bash` and `rm` will need the PATH converted back to UNIX.
+    # Especially ensure /usr/bin:/bin is present in PATH even if redundant so
+    # `trap 'rm -rf "$WORK"' EXIT` handler can find 'rm'.
+    if [[ -n "${CYGPATH_LOC:-}" ]]; then PATH=$($CYGPATH_LOC --path "$PATH"):/usr/bin:/bin; fi
+fi
+
+# print PATH for troubleshooting
+if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then echo "+ [PATH] $PATH" >&2; fi
+
+# We are about to `exec` so we are responsible for cleaning up the temporary directories
+rm -rf "$WORK"
+
+# run the requested command
+if [[ "$#" -eq 0 ]]; then
+    if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
+    # shellcheck disable=SC2016
+    exec env "${ENV_ARGS[@]}" PS1=dev-"$BUILDTYPE"':\w\$ ' bash --norc --noprofile -i
+else
+    if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
+    exec env "${ENV_ARGS[@]}" "$@"
+fi

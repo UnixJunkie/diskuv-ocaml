@@ -1,0 +1,70 @@
+# Based on https://raw.githubusercontent.com/fdopen/opam-repository-mingw/opam2/packages/ocaml-variants/ocaml-variants.4.12.0%2Bmsvc64/opam
+# with tweaks so works with MSYS2 rather than Cygwin.
+#
+# Currently all the compiler options are ignored for Windows!!!
+# TODO: Create a merge of this file and
+#       https://github.com/ocaml/opam-repository/tree/master/packages/ocaml-variants/ocaml-variants.4.12.0%2Boptions
+opam-version: "2.0"
+synopsis: "OCaml 4.12.0 (msvc64)"
+maintainer: "platform@lists.ocaml.org"
+authors: "Xavier Leroy and many contributors"
+homepage: "https://ocaml.org"
+bug-reports: "https://github.com/fdopen/opam-repository-mingw/issues"
+dev-repo: "git://github.com/ocaml/ocaml"
+depends: [
+  "ocaml" {= "4.12.0" & post}
+  "base-unix" {post}
+  "base-bigarray" {post}
+  "base-threads" {post}
+]
+conflict-class: "ocaml-core-compiler"
+flags: compiler
+setenv: [
+  [OCAMLLIB = "%{prefix}%/lib/ocaml"]
+  [CAML_LD_LIBRARY_PATH = "%{lib}%/stublibs"]
+  [CC = "cl.exe"]
+]
+build: [
+  # This used to be:
+  #   ["./configure" "--prefix=%{prefix}%" "--host=x86_64-pc-windows"]
+  # That --prefix is used to run `ocaml/tools/Makefile`'s (https://github.com/ocaml/ocaml/blob/b7651b57424cafc4c4a1e52893e7143e64f890ae/tools/Makefile#L146-L152):
+  #   ocamlmklibconfig.ml: $(ROOTDIR)/Makefile.config Makefile
+  #        (echo 'let bindir = "$(BINDIR)"'; \
+  # And bash would error out with:
+  #   1 | let bindir = "C:\Usersser\.opam.12/bin"
+  #   Error (warning 14 [illegal-backslash]): illegal backslash escape in string.
+  # because --prefix is a pure Windows path containing backslashes.
+  # Now we use `cygpath -am` to convert it to a C:/Users/user/... path that is portable.
+  #
+  # Upstream big fix? Somehow get the Opam prefix to be C:/ rather than C:\ . Unclear where it is getting it from, and doesn't seem overridable.
+  ["dash" "-exc" "cygpath -am '%{prefix}%' > msys2.prefix && exec ./configure --prefix \"`cat msys2.prefix`\" --host=x86_64-pc-windows"]
+  [make "SHELL=/bin/dash" "flexdll"]
+  [make "SHELL=/bin/dash" "-j%{jobs}%" "world.opt"]
+  [make "SHELL=/bin/dash" "flexlink.opt"]
+]
+install: [
+  [make "SHELL=/bin/dash" "install"]
+  # This used to be:
+  #    ["dash" "-exc" "echo \"%{lib}%/stublibs\"  >> \"%{lib}%/ocaml/ld.conf\""]
+  # which would expand to:
+  #    dash.exe -exc "echo 'C:\Users\user\.opam\4.12\lib/stublibs'""  >> 'C:\Users\user\.opam\4.12\lib/ocaml/ld.conf'
+  # For Opam installed packages (in the future) the left-hand side (the path to stublibs) should be
+  # Windows portable (ex. C:/Users/.../stublibs).
+  #
+  ["dash" "-exc" "cygpath -am '%{lib}%/stublibs' >> '%{lib}%/ocaml/ld.conf'"]
+]
+patches: ["ocaml-4.12.0+beta1.patch" "inline-flexdll.patch"]
+url {
+  src: "https://github.com/ocaml/ocaml/archive/4.12.0.tar.gz"
+  checksum: "sha512=951e44cdda613f9c6c5f988434c84249a2d63ba14e21938a9e74c174ebaf9d81a3160d1e5021d57fcd4882732ae6aefc05239ac38116f39ca83d53879d5d4eaf"
+}
+extra-source "ocaml-4.12.0+beta1.patch" {
+  src:
+    "https://gist.githubusercontent.com/fdopen/665421b0ba046cc970e2266b2b246cb2/raw/21279bc217879a9771bf4ef09e213664bdebaef5/ocaml-4.12.0+beta1.patch"
+  checksum: "sha512=797a865a1e5512ca9d44ec73599eec86f5c83707075ec93a85fd86eea4bdd9a7556c839cd3b1028ead842ec33a8a60ae554caf38edb98d8aeebd814f2d6358ac"
+}
+extra-source "inline-flexdll.patch" {
+  src:
+    "https://gist.githubusercontent.com/fdopen/fdc645a61a208552ebac76a67eafd3ee/raw/9f521e91c8f0e9490652651ccdbfae88da701919/inline-flexdll.patch"
+  checksum: "sha512=c62b6725b14e37f7d98e45c3c7308dacb292830bac293eb4b13fe3b1f0cfc035a14315433cf58defd485845e5cb738f7d1f050b416a0052b176d5b276e40a560"
+}
