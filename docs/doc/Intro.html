@@ -1,0 +1,435 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Getting Started &mdash; Diskuv OCaml  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Diskuv OCaml" href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #3347A9" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Diskuv OCaml
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Getting Started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#about-ocaml">About OCaml</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#about-diskuv-ocaml">About Diskuv OCaml</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#how-to-install">How to Install</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#requirements">Requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#four-step-starter-instructions">Four-Step Starter Instructions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#one-get-git">ONE. <em>Get Git.</em></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#two-download-the-starter-project">TWO. <em>Download the starter project.</em></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#three-run-the-install-world-script">THREE. <em>Run the Install World script.</em></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#four-open-in-visual-studio-code">FOUR. <em>Open in Visual Studio Code.</em></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#optional-advanced-administrator-installation">Optional Advanced: Administrator Installation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#optional-advanced-virtual-machine-installation">Optional Advanced: Virtual Machine Installation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Diskuv OCaml</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>Getting Started</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/doc/Intro.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="getting-started">
+<h1>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
+<p>This section is about getting started with <em>Diskuv OCaml</em>. We will begin by giving you a brief overview of
+where to learn about OCaml, show you what you will get with the <em>Diskuv OCaml</em> distribution, and finish with how to get
+the <em>Diskuv OCaml</em> distribution installed on your system.</p>
+<div class="section" id="about-ocaml">
+<h2>About OCaml<a class="headerlink" href="#about-ocaml" title="Permalink to this headline">¶</a></h2>
+<p>There are a few webpage that you should have bookmarked as you learn about OCaml. The first is
+the official OCaml website’s <a class="reference external" href="https://ocaml.org/learn/description.html">What’s OCaml?</a> which has a comprehensive list of features
+that OCaml provides (the sales pitch!), and a good summary of OCaml:</p>
+<blockquote>
+<div><p>OCaml is a general purpose programming language with an emphasis on expressiveness and safety. Developed
+for more than 20 years at <a class="reference external" href="http://www.inria.fr/en">Inria</a> by a group of leading researchers, it has an
+advanced type system that helps catch your mistakes without getting in your way. It’s used in environments
+where <a class="reference external" href="https://ocaml.org/learn/companies.html">a single mistake can cost millions and speed matters</a>, is
+supported by an active community, and has a rich set of libraries and development tools.</p>
+</div></blockquote>
+<p>Then we recommend looking at the free online book
+<a class="reference external" href="https://dev.realworldocaml.org/index.html/">Real World OCaml</a>. It will guide you through the language and
+explore each of OCaml’s major features. You will need a distribution of OCaml to follow along. Windows users
+will need to use the <em>Diskuv OCaml</em> distribution (there are other ways to install OCaml on Windows, but they
+are difficult or deprecated), while Linux and macOS users have choices explained in the book. We will
+discuss <em>Diskuv OCaml</em> in the next section.</p>
+<p>Once you start writing your own code you will need to know where to look to find libraries (called <strong>packages</strong> in
+OCaml). We recommend just browsing the packages at
+<a class="reference external" href="https://docs.ocaml.pro/html/about.html">OCamlPro’s OCaml Documentation Hub</a> since it is fairly comprehensive,
+reasonably up-to-date and has links to most package’s documentation. Just click on its
+<a class="reference external" href="https://docs.ocaml.pro/html/index.html">Packages tab</a> and do a text search with Ctrl-F or ⌘-F:</p>
+<a class="reference internal image-reference" href="https://docs.ocaml.pro/html/_odoc-theme/index-page.png"><img alt="OCamlPro OCaml Documentation Hub Main Index" src="https://docs.ocaml.pro/html/_odoc-theme/index-page.png" style="width: 400px;" /></a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<a class="reference internal image-reference" href="https://docs.ocaml.pro/html/_odoc-theme/package-page.png"><img alt="OCamlPro OCaml Documentation Hub Package Info for AHROCKSDB.0.2.2" src="https://docs.ocaml.pro/html/_odoc-theme/package-page.png" style="width: 400px;" /></a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p>Finally, if you hit a roadblock the best place to go is the <a class="reference external" href="https://tinyurl.com/discord-ocaml">Discord chat rooms</a>
+and ask your question on the <code class="docutils literal notranslate"><span class="pre">#beginners</span></code> channel:</p>
+<a class="reference internal image-reference" href="../_images/Intro-discord.jpg"><img alt="Discord Server chat room" src="../_images/Intro-discord.jpg" style="width: 400px;" /></a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="about-diskuv-ocaml">
+<h2>About Diskuv OCaml<a class="headerlink" href="#about-diskuv-ocaml" title="Permalink to this headline">¶</a></h2>
+<p><em>Diskuv OCaml</em> is an OCaml distribution focused on a) secure, cross-platform software development and b) ease of use
+for language learners and professional developers.</p>
+<p>Diskuv, a company that is creating safety solutions, adopted the OCaml language because OCaml is the thought leader in
+formally verified software (a fancy term for proving that software is secure) and because it can be very portable due to
+its close ties to the C language. However, developing in OCaml used to require a lot of tribal knowledge. For example
+the popular <a class="reference external" href="https://github.com/bcpierce00/unison#unison-file-synchronizer">Unison File Sychronizer</a> that can
+synchronize folders between different operating systems (pretty cool!) was developed in OCaml and has been available on
+macOS, Linux and Windows for decades, yet even as of today OCaml has no official support for Windows. The online book
+<a class="reference external" href="https://dev.realworldocaml.org/index.html/">Real World OCaml</a> solved much of the tribal knowledge problem but even
+in 2021 you will likely going to run into some roadblocks. Several companies and groups have filled the void
+(Jane Street, OCaml Labs, OCaml Pro, Facebook among others). <em>Diskuv OCaml</em> was released in August 2021 to coincide
+with the <a class="reference external" href="https://fdopen.github.io/opam-repository-mingw/2021/02/26/repo-discontinued/">deprecation of the tremendously helpful but unoffical</a>
+port of OCaml to Windows; it provides a few critical functions:</p>
+<ol class="arabic simple">
+<li><p>A way to install a coherent set of software that has been vetted to work together. Especially but not only on Windows.</p></li>
+<li><p>A way to upgrade that software, usually in response to security patches or critical bug fixes.</p></li>
+<li><p>A support channel when things go wrong.</p></li>
+</ol>
+<p>The first releases (0.1.x) of Diskuv OCaml support Windows 64-bit systems only, and should be considered preview
+releases. The priority for future releases in 2021 and likely most of 2022 will be on stability, security and ease of
+use for Windows developers, although more features and operating systems may be added if there is a community need.</p>
+<p>The <em>Diskuv OCaml</em> distribution includes the following OCaml components:</p>
+<ul>
+<li><p>The basic OCaml system including:</p>
+<dl class="simple">
+<dt>ocamlc</dt><dd><p><a class="reference external" href="https://ocaml.org/manual/comp.html">The batch compiler</a></p>
+</dd>
+<dt>ocaml</dt><dd><p><a class="reference external" href="https://ocaml.org/manual/toplevel.html">The toplevel system</a> or REPL.
+<em>We also include a full-featured toplevel; see utop below</em></p>
+</dd>
+<dt>ocamlrun</dt><dd><p><a class="reference external" href="https://ocaml.org/manual/runtime.html">The runtime system</a></p>
+</dd>
+<dt>ocamlopt</dt><dd><p><a class="reference external" href="https://ocaml.org/manual/native.html">The native-code compiler</a></p>
+</dd>
+<dt>ocamllex, ocamlyacc</dt><dd><p><a class="reference external" href="https://ocaml.org/manual/lexyacc.html">Lexer and parser generators</a></p>
+</dd>
+<dt>ocamldep</dt><dd><p><a class="reference external" href="https://ocaml.org/manual/depend.html">The dependency generator</a></p>
+</dd>
+<dt>ocamldoc</dt><dd><p><a class="reference external" href="https://ocaml.org/manual/ocamldoc.html">The documentation generator</a></p>
+</dd>
+<dt>ocamldebug</dt><dd><p><a class="reference external" href="https://ocaml.org/manual/debugger.html">The debugger</a></p>
+</dd>
+<dt>ocamlprof</dt><dd><p><a class="reference external" href="https://ocaml.org/manual/profil.html">The profiler</a></p>
+</dd>
+<dt>ocamlmklib</dt><dd><p><a class="reference external" href="https://ocaml.org/manual/intfc.html">The mixed C/OCaml library maker</a></p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>opam</dt><dd><p><a class="reference external" href="https://opam.ocaml.org/">Opam</a>, the standard package manager for OCaml</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>dune</dt><dd><p><a class="reference external" href="https://dune.readthedocs.io/">Dune</a>, the standard build tool for OCaml</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>utop</dt><dd><p><a class="reference external" href="https://github.com/ocaml-community/utop#readme">UTop</a>, the standard “toplevel” for interactively running
+OCaml code</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>ocamllsp</dt><dd><p><a class="reference external" href="https://github.com/ocaml/ocaml-lsp#ocaml-lsp">OCaml Language Server</a> for use with
+OCaml friendly IDEs like Visual Studio Code and Emacs</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>ocamlformat</dt><dd><p><a class="reference external" href="https://github.com/ocaml-ppx/ocamlformat#readme">OCamlFormat</a>, the standard auto-formatter for OCaml code</p>
+</dd>
+<dt>ocp-indent</dt><dd><p><a class="reference external" href="http://www.typerex.org/ocp-indent.html">ocp-indent</a>, the standard indenter for mixed OCaml/non-OCaml documents</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>findlib</dt><dd><p><a class="reference external" href="http://projects.camlcity.org/projects/findlib.html">Findlib</a>, the standard library manager for OCaml modules</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>flexdll</dt><dd><p><a class="reference external" href="https://github.com/alainfrisch/flexdll#readme">FlexDLL</a> for expert users who are creating dynamic plugins</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>and it also includes some C-language components for the cross-platform tooling we will be releasing in the future:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>cmake</dt><dd><p><a class="reference external" href="https://cmake.org/">CMake</a>, the standard high-level build tool for C and C++ projects</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>ninja</dt><dd><p><a class="reference external" href="https://ninja-build.org/">Ninja</a>, a low level build tool primarily for C projects</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p><strong>All of the above components are open source with liberal licenses.</strong></p>
+</div>
+<div class="section" id="how-to-install">
+<h2>How to Install<a class="headerlink" href="#how-to-install" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>These instructions are for Windows developers.</p>
+</div></blockquote>
+<div class="section" id="requirements">
+<h3>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>64-bit Windows 10 or 64-bit Windows 11. <em>More operating systems will be coming.</em></p></li>
+<li><p>A fast internet connection. You will be downloading tens of gigabytes of data.</p></li>
+<li><p>30GB of disk space.</p></li>
+<li><p>Administrator access on your computer to install the Microsoft C compilers. If you use a shared or restricted PC,
+please ask your PC administrator if they can follow the <a class="reference internal" href="#advanced-administrator">Advanced - Administrator</a> instructions; after that you
+and others on the PC can install without Administrator access.</p></li>
+<li><p>You don’t need to watch the installation, but you do need to keep your computer powered on for at least 4
+hours. The <em>Diskuv OCaml</em> installer will be downloading and doing intensive compilation during these hours,
+and you are free to do other things on your computer while it downloads and compiles.</p></li>
+</ul>
+</div>
+<div class="section" id="four-step-starter-instructions">
+<h3>Four-Step Starter Instructions<a class="headerlink" href="#four-step-starter-instructions" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="one-get-git">
+<h4>ONE. <em>Get Git.</em><a class="headerlink" href="#one-get-git" title="Permalink to this headline">¶</a></h4>
+<div class="sidebar">
+<p class="sidebar-title">Want to check if Git is installed?</p>
+<ol class="arabic simple">
+<li><p>Open PowerShell (press the Windows key ⊞, type “PowerShell” and then Open <code class="docutils literal notranslate"><span class="pre">Windows</span> <span class="pre">PowerShell</span></code>).</p></li>
+<li><p>Run <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">--version</span></code></p></li>
+<li><p>If you see a version number like <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">version</span> <span class="pre">2.32.0.windows.2</span></code> then you have Git.</p></li>
+</ol>
+</div>
+<p>You will need Git to <a class="reference external" href="https://git-scm.com/book/en/v2/Getting-Started-About-Version-Control">get and save the source code</a>
+of local projects on your machine, or to
+<a class="reference external" href="https://docs.github.com/en/get-started/quickstart">share your source code</a> with others. Download <a class="reference external" href="https://gitforwindows.org/">Git for Windows</a> if you do not
+have Git installed on your machine.</p>
+</div>
+<div class="section" id="two-download-the-starter-project">
+<h4>TWO. <em>Download the starter project.</em><a class="headerlink" href="#two-download-the-starter-project" title="Permalink to this headline">¶</a></h4>
+<p><em>TODO</em>.</p>
+</div>
+<div class="section" id="three-run-the-install-world-script">
+<h4>THREE. <em>Run the Install World script.</em><a class="headerlink" href="#three-run-the-install-world-script" title="Permalink to this headline">¶</a></h4>
+<p><em>TODO</em>. Be sure to include VS Code plugin.</p>
+</div>
+<div class="section" id="four-open-in-visual-studio-code">
+<h4>FOUR. <em>Open in Visual Studio Code.</em><a class="headerlink" href="#four-open-in-visual-studio-code" title="Permalink to this headline">¶</a></h4>
+<p><em>TODO</em>. Be sure to open the terminal and do a build.</p>
+<p>Finished with the starter? It is time to create your own projects. <em>TODO</em>.</p>
+</div>
+</div>
+<div class="section" id="optional-advanced-administrator-installation">
+<span id="advanced-administrator"></span><h3>Optional Advanced: Administrator Installation<a class="headerlink" href="#optional-advanced-administrator-installation" title="Permalink to this headline">¶</a></h3>
+<p>The <em>Diskuv OCaml</em> distribution includes a <code class="docutils literal notranslate"><span class="pre">setup-machine.ps1</span></code> PowerShell script that will ask for elevated
+Administrator permissions to install the Microsoft C compiler (the “MSBuild” components of Visual Studio).
+As an Administrator you can run that PowerShell script once, and the non-Administrator users on your PCs will be able
+to read and complete the same <em>Diskuv OCaml</em> instructions as everybody else.</p>
+<p>The Administrator portion takes 2GB of disk space while each user can take up to 25GB of disk space in their User
+Profiles (<code class="docutils literal notranslate"><span class="pre">$env:USERPROFILE\Programs\DiskuvOCaml</span></code> and <code class="docutils literal notranslate"><span class="pre">$env:USERPROFILE\.opam</span></code>) just for the basic <em>Diskuv OCaml</em>
+distribution. Please plan accordingly.</p>
+</div>
+<div class="section" id="optional-advanced-virtual-machine-installation">
+<h3>Optional Advanced: Virtual Machine Installation<a class="headerlink" href="#optional-advanced-virtual-machine-installation" title="Permalink to this headline">¶</a></h3>
+<p>Even if you don’t have a Windows PC you can use a virtual machine to run a “evaluation” Microsoft licensed copy of
+Windows. It requires some effort on your part: you will be able to use the virtual machine for approximately one month,
+and then you will need reinstall the virtual machine with a new evaluation license. But this is a great method
+if you have a Linux or macOS computer and need to test out whether your source code compiles and runs correctly on
+a Windows (virtual) machine.</p>
+<p><em>TODO</em> Fill in.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="../index.html" class="btn btn-neutral float-left" title="Diskuv OCaml" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2021, Diskuv, Inc.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
