@@ -59,6 +59,11 @@
 
 .Example
     PS> vendor\diskuv-ocaml\installtime\windows\setup-userprofile.ps1
+
+.Example
+    PS> $global:SkipMSYS2Setup = $true ; $global:SkipCygwinSetup = $true; $global:SkipMSYS2Update = $true ; $global:SkipMobyDownload = $true ; $global:SkipMobyFixup = $true ; $global:SkipOpamSetup = $true
+    PS> $global:IncrementalDiskuvOcamlDeployment = $true; $global:RedeployIfExists = $true
+    PS> vendor\diskuv-ocaml\installtime\windows\setup-userprofile.ps1
 #>
 
 # Cygwin Rough Edges
@@ -122,7 +127,7 @@ if (!$global:Skip64BitCheck -and ![Environment]::Is64BitOperatingSystem) {
 
 $global:ProgressStep = 0
 $global:ProgressActivity = $null
-$ProgressTotalSteps = 15
+$ProgressTotalSteps = 17
 $ProgressId = $ParentProgressId + 1
 $global:ProgressStatus = $null
 
@@ -134,6 +139,19 @@ function Write-ProgressStep {
             -PercentComplete (100 * ($global:ProgressStep / $ProgressTotalSteps))
     }
     $global:ProgressStep += 1
+}
+function Write-ProgressCurrentOperation {
+    param(
+        $CurrentOperation
+    )
+    if (!$global:SkipProgress) {
+        Write-Progress -Id $ProgressId `
+            -ParentId $ParentProgressId `
+            -Activity $global:ProgressActivity `
+            -Status $global:ProgressStatus `
+            -CurrentOperation $CurrentOperation `
+            -PercentComplete (100 * ($global:ProgressStep / $ProgressTotalSteps))
+    }
 }
 
 # ----------------------------------------------------------------
@@ -153,7 +171,12 @@ $GitWindowsSetupAbsPath = "$env:TEMP\gitwindows"
 $GitOriginalVersion = @(0, 0, 0)
 $SkipGitForWindowsInstallBecauseNonGitForWindowsDetected = $false
 $GitExists = $false
-$GitExe = & where.exe /Q git
+
+$oldeap = $ErrorActionPreference
+$ErrorActionPreference = "SilentlyContinue"
+$GitExe = & where.exe git 2> $null
+$ErrorActionPreference = oldeap
+
 if ($LastExitCode -eq 0) {
     $GitExists = $true
     $GitResponse = & $GitExe --version
@@ -406,6 +429,7 @@ if (!$global:RedeployIfExists -and $finished) {
 # Use `Remove-Variable IncrementalDiskuvOcamlDeployment` to remove the override.
 $EnableIncrementalDeployment = $global:IncrementalDiskuvOcamlDeployment -and $true
 
+$global:ProgressStatus = "Starting Deployment"
 $ProgramPath = Start-BlueGreenDeploy -ParentPath $ProgramParentPath `
     -DeploymentId $DeploymentId `
     -KeepOldDeploymentWhenSameDeploymentId:$EnableIncrementalDeployment `
@@ -427,20 +451,6 @@ $TempPath = Start-BlueGreenDeploy -ParentPath $TempParentPath `
 # ----------------------------------------------------------------
 # Enhanced Progress Reporting
 
-filter timestamp {"$(Get-Date -Format FileDateTimeUniversal): $_"}
-function Write-ProgressCurrentOperation {
-    param(
-        $CurrentOperation
-    )
-    if (!$global:SkipProgress) {
-        Write-Progress -Id $ProgressId `
-            -ParentId $ParentProgressId `
-            -Activity $global:ProgressActivity `
-            -Status $global:ProgressStatus `
-            -CurrentOperation $CurrentOperation `
-            -PercentComplete (100 * ($global:ProgressStep / $ProgressTotalSteps))
-    }
-}
 $AuditLog = Join-Path -Path $ProgramPath -ChildPath "setup-userprofile.full.log"
 $AuditCurrentLog = Join-Path -Path $ProgramPath -ChildPath "setup-userprofile.current.log"
 function Invoke-CygwinCommandWithProgress {
@@ -515,6 +525,34 @@ $AdditionalDiagnostics = "`n`n"
 try {
 
     # ----------------------------------------------------------------
+    # BEGIN inotify-win
+
+    $global:ProgressActivity = "Install inotify-win"
+    Write-ProgressStep
+
+    if ([Environment]::Is64BitOperatingSystem) {
+        $Vcvars = "$env:SystemDrive\DiskuvOCaml\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
+    } else {
+        $Vcvars = "$env:SystemDrive\DiskuvOCaml\BuildTools\VC\Auxiliary\Build\vcvars32.bat"
+    }
+    $InotifyCacheParentPath = "$TempPath"
+    $InotifyCachePath = "$InotifyCacheParentPath\inotify-win"
+    $InotifyExeBasename = "inotifywait.exe"
+    $InotifyToolDir = "$ProgramPath\tools\inotify-win"
+    $InotifyExe = "$InotifyToolDir\$InotifyExeBasename"
+    if (!(Test-Path -Path $InotifyExe)) {
+        if (!(Test-Path -Path $InotifyToolDir)) { New-Item -Path $InotifyToolDir -ItemType Directory | Out-Null }
+        if (Test-Path -Path $InotifyCachePath) { Remove-Item -Path $InotifyCachePath -Recurse -Force }
+        & "$GitExe" -C $InotifyCacheParentPath clone https://github.com/thekid/inotify-win.git
+        & "$GitExe" -C $InotifyCachePath -c advice.detachedHead=false checkout 36d18f3dfe042b21d7136a1479f08f0d8e30e2f9
+        & cmd.exe /c "$Vcvars && csc.exe /nologo /target:exe `"/out:$InotifyCachePath\inotifywait.exe`" `"$InotifyCachePath\src\*.cs`""
+        Copy-Item -Path "$InotifyCachePath\$InotifyExeBasename" -Destination "$InotifyExe"
+    }
+
+    # END inotify-win
+    # ----------------------------------------------------------------
+
+    # ----------------------------------------------------------------
     # BEGIN Ninja
 
     $global:ProgressActivity = "Install Ninja"
@@ -533,7 +571,6 @@ try {
         Remove-Item -Path $NinjaZip
         Copy-Item -Path "$NinjaCachePath\$NinjaExeBasename" -Destination "$NinjaExe"
     }
-
 
     # END Ninja
     # ----------------------------------------------------------------
@@ -627,7 +664,7 @@ try {
 
         # Create /opt/diskuv-ocaml/installtime/ which is specific to Cygwin with common pieces from UNIX.
         $cygwinAbsPath = & $CygwinDir\bin\cygpath.exe -au "$DkmlPath"
-        Invoke-CygwinCommandWithProgress -CygwinDir $CygwinDir -Command "/usr/bin/install -d /opt/diskuv-ocaml/setup && /usr/bin/rsync -a --delete '$cygwinAbsPath'/installtime/cygwin/ '$cygwinAbsPath'/installtime/unix/ /opt/diskuv-ocaml/installtime/ && /usr/bin/find /opt/diskuv-ocaml/installtime/ -type f | /usr/bin/xargs /usr/bin/chmod +x"
+        Invoke-CygwinCommandWithProgress -CygwinDir $CygwinDir -Command "/usr/bin/install -d /opt/diskuv-ocaml/installtime && /usr/bin/rsync -a --delete '$cygwinAbsPath'/installtime/cygwin/ '$cygwinAbsPath'/installtime/unix/ /opt/diskuv-ocaml/installtime/ && /usr/bin/find /opt/diskuv-ocaml/installtime/ -type f | /usr/bin/xargs /usr/bin/chmod +x"
 
         # Run through dos2unix which is only installed in $CygwinRootPath
         $dkmlSetupCygwinAbsMixedPath = & $CygwinDir\bin\cygpath.exe -am "/opt/diskuv-ocaml/installtime/"
@@ -810,7 +847,7 @@ try {
     # Run through dos2unix.
     $DkmlMSYS2AbsPath = & $MSYS2Dir\usr\bin\cygpath.exe -au "$DkmlPath"
     Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-        -Command ("/usr/bin/install -d /opt/diskuv-ocaml/setup && " +
+        -Command ("/usr/bin/install -d /opt/diskuv-ocaml/installtime && " +
         "/usr/bin/rsync -a --delete '$DkmlMSYS2AbsPath'/installtime/msys2/ '$DkmlMSYS2AbsPath'/installtime/unix/ /opt/diskuv-ocaml/installtime/ && " +
         "/usr/bin/find /opt/diskuv-ocaml/installtime/ -type f | /usr/bin/xargs /usr/bin/dos2unix --quiet && " +
         "/usr/bin/find /opt/diskuv-ocaml/installtime/ -type f | /usr/bin/xargs /usr/bin/chmod +x")
@@ -850,7 +887,7 @@ try {
     # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
     if (!$global:SkipOpamSetup) {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-            -Command "env $UnixVarsContentsOnOneLine bash -x '$DkmlPath\setup\unix\init-opam-root.sh' dev"
+            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps bash -x '$DkmlPath\setup\unix\init-opam-root.sh' dev"
     }
 
 
@@ -866,7 +903,7 @@ try {
     # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
     if (!$global:SkipOpamSetup) {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-            -Command "env $UnixVarsContentsOnOneLine '$DkmlPath\setup\unix\create-diskuv-boot-DO-NOT-DELETE-switch.sh'"
+            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\setup\unix\create-diskuv-boot-DO-NOT-DELETE-switch.sh'"
         }
 
     # END opam switch create diskuv-boot-DO-NOT-DELETE
@@ -881,7 +918,7 @@ try {
     # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
     if (!$global:SkipOpamSetup) {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-            -Command "env $UnixVarsContentsOnOneLine '$DkmlPath\setup\unix\create-opam-switch.sh' -s -b Release"
+            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\setup\unix\create-opam-switch.sh' -s -b Release"
         }
 
     # END opam switch create diskuv-system
@@ -899,13 +936,32 @@ try {
     if (!$global:SkipOpamSetup) {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
             -Command (
-            "env $UnixVarsContentsOnOneLine '$DkmlPath\runtime\unix\platform-opam-exec' -s install --yes " +
+            "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\runtime\unix\platform-opam-exec' -s install --yes " +
             "$($DistributionPackages -join ' ')"
         )
     }
 
-
     # END opam install required `diskuv-system` packages
+    # ----------------------------------------------------------------
+
+    # ----------------------------------------------------------------
+    # BEGIN compile apps
+
+    $global:ProgressActivity = "Compile apps"
+    Write-ProgressStep
+
+    $AppsCachePath = "$TempPath\apps"
+    $AppsBinDir = "$ProgramPath\tools\apps"
+
+    Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
+        -Command ("set -x && " +
+            "cd /opt/diskuv-ocaml/installtime/apps/ && " +
+            "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\runtime\unix\platform-opam-exec' -s exec -- dune build --build-dir '$AppsCachePath' @all")
+
+    if (!(Test-Path -Path $AppsBinDir)) { New-Item -Path $AppsBinDir -ItemType Directory | Out-Null }
+    Copy-Item "$AppsCachePath\default\fswatch_on_inotifywin\fswatch.exe" -Destination $AppsBinDir
+
+    # END compile apps
     # ----------------------------------------------------------------
 
     # ----------------------------------------------------------------
@@ -924,7 +980,6 @@ try {
             Copy-Item -Path "$DiskuvSystemDir\bin\$binary" -Destination $ProgramBinDir
         }
     }
-
 
     # END opam install `diskuv-system` to Programs
     # ----------------------------------------------------------------
@@ -967,7 +1022,11 @@ try {
     Write-ProgressStep
 
     Stop-BlueGreenDeploy -ParentPath $ProgramParentPath -DeploymentId $DeploymentId -Success
-    Stop-BlueGreenDeploy -ParentPath $TempParentPath -DeploymentId $DeploymentId # no -Success so always delete the temp directory
+    if ($global:RedeployIfExists) {
+        Stop-BlueGreenDeploy -ParentPath $TempParentPath -DeploymentId $DeploymentId -Success # don't delete the temp directory
+    } else {
+        Stop-BlueGreenDeploy -ParentPath $TempParentPath -DeploymentId $DeploymentId # no -Success so always delete the temp directory
+    }
 
     # dkmlvars.* (DiskuvOCaml variables)
     #
@@ -979,8 +1038,8 @@ try {
 
     Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
         -Command (
-            "dos2unix --newfile '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.sh' '$ProgramParentMSYS2AbsPath/dkmlvars.tmp.sh' && " +
-            "rm -f '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.sh'" +
+            "set -x && dos2unix --newfile '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.sh' '$ProgramParentMSYS2AbsPath/dkmlvars.tmp.sh' && " +
+            "rm -f '$ProgramParentMSYS2AbsPath/dkmlvars.utf16le-bom.sh' && " +
             "mv '$ProgramParentMSYS2AbsPath/dkmlvars.tmp.sh' '$ProgramParentMSYS2AbsPath/dkmlvars.sh'"
         )
 
@@ -1049,7 +1108,7 @@ Write-Host ""
 Write-Host ""
 Write-Host ""
 Write-Host "Setup is complete. Congratulations!"
-Write-Host "Enjoy Diskuv OCaml! Documentation can be found at https://diskuv.github.io/diskuv-ocaml/"
+Write-Host "Enjoy Diskuv OCaml! Documentation can be found at https://diskuv.gitlab.io/diskuv-ocaml/"
 Write-Host ""
 Write-Host ""
 Write-Host ""

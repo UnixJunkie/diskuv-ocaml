@@ -25,7 +25,7 @@ source "$DKMLDIR/runtime/unix/_common_tool.sh"
 
 # To be portable whether we build scripts in the container or not, we
 # change the directory to always be in the DKMLDIR (just like the container
-# sets the directory to be /work mounted to DKMLDIR)
+# sets the directory to be /work)
 cd "$DKMLDIR"
 
 # From here onwards everything should be run using RELATIVE PATHS ...

@@ -484,7 +484,7 @@ buildconfig/dune/dune.env.executable: $(foreach option,$(DUNE_EXECUTABLE_OVERRID
 .PHONY: show-vcvars-dev
 show-vcvars-dev:
 	@if [ "$$MSYSTEM" = MSYS ] || [ -e /usr/bin/cygpath ]; then \
-		v=$(VCVARS_windows_x86_64); \
+		if [ `/usr/bin/uname -m` = x86_64 ]; then v=vcvars64; else v=vcvar32; fi; \
 	else \
 		v=$(NOTAPPLICABLE); \
 	fi && \

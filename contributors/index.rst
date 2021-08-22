@@ -145,7 +145,14 @@ and it also includes some C-language components for the cross-platform tooling w
 - ninja
     `Ninja <https://ninja-build.org/>`_, a low level build tool primarily for C projects
 
-**All of the above components are open source with liberal licenses.**
+The *Diskuv OCaml* distribution will automatically install the following components if missing from your system:
+
+- git
+    `Git <https://git-scm.com/book/en/v2/Getting-Started-About-Version-Control>`_, the standard version control for
+    getting, saving and sharing source code.
+- cl, link
+    `Visual Studio Build Tools <https://docs.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-build-tools?view=vs-2019#desktop-development-with-c>`_,
+    the official Microsoft tools for building modern C/C++ apps for Windows
 
 .. _How to Install:
 
@@ -167,38 +174,30 @@ Requirements
   hours. The *Diskuv OCaml* installer will be downloading and doing intensive compilation during these hours,
   and you are free to do other things on your computer while it downloads and compiles.
 
-Four-Step Starter Instructions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Two-Step Installation Instructions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-ONE. *Get Git.*
-"""""""""""""""
-
-.. sidebar:: Want to check if Git is installed?
-
-    1. Open PowerShell (press the Windows key ⊞, type "PowerShell" and then Open ``Windows PowerShell``).
-    2. Run ``git --version``
-    3. If you see a version number like ``git version 2.32.0.windows.2`` then you have Git.
-
-
-You will need Git to `get and save the source code <https://git-scm.com/book/en/v2/Getting-Started-About-Version-Control>`_
-of local projects on your machine, or to
-`share your source code <https://docs.github.com/en/get-started/quickstart>`_ with others. Download `Git for Windows <https://gitforwindows.org/>`_ if you do not
-have Git installed on your machine.
-
-TWO. *Download the starter project.*
-""""""""""""""""""""""""""""""""""""
+ONE. *Download the distribution.*
+"""""""""""""""""""""""""""""""""
 
 1. Open PowerShell (press the Windows key ⊞, type "PowerShell" and then Open ``Windows PowerShell``).
 2. Run the following in PowerShell to fetch the starter project from its Git repository:
 
   .. code-block:: PowerShell
 
-    if (-not (Test-Path -Path ~\DiskuvProjects)) { New-Item -ItemType Directory -Path ~\DiskuvProjects }
-    cd ~\DiskuvProjects
-    git clone --recursive https://github.com/diskuv/diskuv-ocaml-starter
+    (Test-Path -Path ~\DiskuvOCamlProjects) -or $(ni ~\DiskuvOCamlProjects -ItemType Directory)
 
-THREE. *Run the Install World script.*
-""""""""""""""""""""""""""""""""""""""
+    iwr `
+      "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/portable-distribution/0.1.0-prerel17/portable-distribution.zip" `
+      -OutFile "$env:TEMP\diskuv-ocaml-distribution.zip"
+
+    Expand-Archive `
+      -Path "$env:TEMP\diskuv-ocaml-distribution.zip" `
+      -DestinationPath ~\DiskuvOCamlProjects `
+      -Force
+
+TWO. *Run the Install World script.*
+""""""""""""""""""""""""""""""""""""
 
 .. sidebar:: Do you have 4 hours?
 
@@ -211,19 +210,35 @@ THREE. *Run the Install World script.*
 
    .. code-block:: PowerShell
 
-     cd ~\DiskuvProjects\diskuv-ocaml-starter
-     vendor\diskuv-ocaml\setup\windows\install-world.ps1
+     cd ~\DiskuvOCamlProjects\diskuv-ocaml
+
+     Set-ExecutionPolicy `
+        -ExecutionPolicy Unrestricted `
+        -Scope Process `
+        -Force
+
+     installtime\windows\install-world.ps1
 
    Depending on your Windows "User Account Control" settings your machine may prompt to click "Yes"
-   to install Visual Studio Build Tools and to install Git; you will only be prompted if you or an
+   to install ``Visual Studio Installer`` and ``Git for Windows``; you will only be prompted if you or an
    Administator has not installed those two programs already. The rest of the installation is completely
    click-free:
 
    .. image:: doc/Intro-install-world.png
       :width: 600
 
-FOUR. *Open in Visual Studio Code.*
-"""""""""""""""""""""""""""""""""""
+BONUS. *Open in Visual Studio Code.*
+""""""""""""""""""""""""""""""""""""
+
+At this point you can do the first N chapters of Real World OCaml.
+
+Go ahead and open PowerShell.
+
+You can do pure OCaml coding but many OCaml programs, including your own, will need
+to install more packages and/or compile C code. We recommend you use a Diskuv OCaml
+local project to do so. Here is a starter project that does that ...
+
+*TODO*. This section needs to go into the "starter" project and work it through example or tutorial.
 
 .. sidebar:: Visual Studio Code is optional.
 
@@ -232,10 +247,9 @@ FOUR. *Open in Visual Studio Code.*
 
 *TODO*. Be sure to include VS Code plugin. Include instructions to install VS Code (optional but strongly recommend) as well.
 
-
 *TODO*. Be sure to open the terminal and do a build.
 
-Finished with the starter? It is time to create your own projects. *TODO*.
+Finished? It is time to create your own projects and look at the starter project.
 
 Indices and tables
 ==================

@@ -25,8 +25,6 @@ $env:PSModulePath += ";$HereDir"
 Import-Module UnixInvokers
 Import-Module Project
 
-$ProjectPath = (Get-ProjectDir -Path $HereDir).FullName
-
 # ----------------------------------------------------------------
 # Progress Reporting
 

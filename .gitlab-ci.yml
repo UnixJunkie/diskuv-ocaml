@@ -1,0 +1,29 @@
+image: python:3.9-alpine
+
+workflow:
+  rules:
+    - if: '$CI_COMMIT_BRANCH'
+
+before_script:
+  - apk add --no-cache make rsync
+  - pip install -U sphinx sphinx_rtd_theme
+
+test:
+  stage: test
+  script:
+  - echo Building Sphinx html twice so that Sphinx cross-references work ...
+  - make -C contributors html ; make -C contributors html O="-W"
+
+pages:
+  stage: deploy
+  script:
+  - echo Building Sphinx html twice so that Sphinx cross-references work ...
+  - make -C contributors html ; make -C contributors html O="-W"
+  - echo Copying HTML into the GitLab Pages required 'public' folder
+  - rsync -av contributors/_build/html/ public
+  artifacts:
+    paths:
+    - public
+    expire_in: 1 day
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "gitlab-pages"'

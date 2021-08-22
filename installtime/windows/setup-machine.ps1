@@ -65,7 +65,6 @@ function Write-ProgressStep {
     }
     $global:ProgressStep += 1
 }
-filter timestamp { "$(Get-Date -Format FileDateTimeUniversal): $_" }
 function Write-ProgressCurrentOperation {
     param(
         $CurrentOperation
@@ -148,7 +147,8 @@ if (!(Test-Path -Path $env:SystemDrive\DiskuvOCaml\BuildTools\MSBuild\Current\Bi
     } else {
         $VsArch = "x86"
     }
-    if (!(Test-Path -Path $VsSetupAbsPath\vc_redist.$VsArch.exe)) { Invoke-WebRequest -Uri https://aka.ms/vs/16/release/vc_redist.x64.exe -OutFile $VsSetupAbsPath\vc_redist.$VsArch.exe }
+    if (!(Test-Path -Path $VsSetupAbsPath)) { New-Item -Path $VsSetupAbsPath -ItemType Directory | Out-Null }
+    if (!(Test-Path -Path $VsSetupAbsPath\vc_redist.$VsArch.exe)) { Invoke-WebRequest -Uri https://aka.ms/vs/16/release/vc_redist.$VsArch.exe -OutFile $VsSetupAbsPath\vc_redist.$VsArch.exe }
     if (!(Test-Path -Path $VsSetupAbsPath\collect.exe)) { Invoke-WebRequest -Uri https://aka.ms/vscollect.exe                   -OutFile $VsSetupAbsPath\collect.exe }
     if (!(Test-Path -Path $VsSetupAbsPath\VisualStudio.chman)) { Invoke-WebRequest -Uri https://aka.ms/vs/16/release/channel           -OutFile $VsSetupAbsPath\VisualStudio.chman }
     if (!(Test-Path -Path $VsSetupAbsPath\vs_buildtools.exe)) { Invoke-WebRequest -Uri https://aka.ms/vs/16/release/vs_buildtools.exe -OutFile $VsSetupAbsPath\vs_buildtools.exe }

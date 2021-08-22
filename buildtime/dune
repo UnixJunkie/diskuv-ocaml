@@ -17,3 +17,6 @@
     "%{project_root}/buildconfig/dune/executable/"
     link_flags
     %{profile}))))
+
+; NOTE: Do not add anything else to this file. Instead add OCaml executable/library code into their
+; own directories.

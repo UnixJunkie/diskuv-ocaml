@@ -119,7 +119,14 @@ fi
 # be available for the prehooks (if any), so we do not use ENV_ARGS
 # for the PATH.
 if [[ "$COMPILATION" = ON ]]; then
-    autodetect_vcvars || true
+    set +e
+    autodetect_vcvars
+    EXITCODE=$?
+    set -e
+    if [[ "$EXITCODE" -eq 2 ]]; then
+        echo "FATAL: Did not detect Diskuv OCaml's Visual Studio Build Tools installation"
+        exit 1
+    fi
     if [[ -n "${ENV_PATH_FULL:-}" ]]; then
         PATH="$ENV_PATH_FULL$ENV_PATH_SUFFIX:/usr/bin:/bin"
     else

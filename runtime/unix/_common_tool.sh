@@ -328,13 +328,17 @@ function autodetect_dkmlvars () {
 # - env:ENV_PATH_PREFIX - Optional. If provided, will be placed in the front of ENV_PATH_FULL on successful detection
 # Outputs:
 # - env:ENV_PATH_FULL if and only if the vcvars could be detected (aka. on a Windows machine, and it is installed)
+# Return Values:
+# - 0: Success
+# - 1: Not a Windows machine
+# - 2: Windows machine without proper Diskuv OCaml installation (typically you should exit)
 function autodetect_vcvars () {
     # Autodetect VCVARS
     if ! is_windows_build_machine; then
         return 1
     fi
     if [[ -z "${SYSTEMDRIVE:-}" ]]; then
-        return 1
+        return 2
     fi
 
     # MSYS2 detection. Path is /c/DiskuvOCaml/BuildTools/VC/Auxiliary/Build/vcvarsall.bat
@@ -348,12 +352,16 @@ function autodetect_vcvars () {
     elif [[ -e /cygdrive/c/DiskuvOCaml/BuildTools/VC/Auxiliary/Build/vcvarsall.bat ]]; then
         MSBUILDDIR="/cygdrive/c/DiskuvOCaml/BuildTools/VC/Auxiliary/Build"
     else
-        return 1
+        return 2
     fi
     make --quiet show-vcvars-"$PLATFORM" OUT_VCVARS_BAT="$WORK"/show-vcvars
+    if [[ ! -e "$WORK"/show-vcvars ]]; then
+        echo "The $PWD/Makefile does not have the show-vcvars-$PLATFORM target. '$PLATFORM' does not appear to be a supported Diskuv platform, or you have not included base.mk" >&2
+        return 2
+    fi
     VCVARSBATCHFILE=$(< "$WORK"/show-vcvars)
     if [[ "$VCVARSBATCHFILE" = "notapplicable" ]]; then
-        return 1
+        return 2
     fi
 
     # FIRST, create a file that calls vcvarsxxx.bat and then adds a `set` dump.

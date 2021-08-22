@@ -56,7 +56,7 @@ for you. Do not change the placeholder `@@YYYYMMDD@@` in it though.
 When you think you are done, you need to test. Publish a prerelease:
 
 ```powershell
-& $env:DiskuvOCamlHome\tools\MSYS2\usr\bin\make.exe release-publish-prerelease
+& $env:DiskuvOCamlHome\tools\MSYS2\usr\bin\make.exe release-prerelease
 ```
 
 Test it, and repeat until all problems are fixed.
