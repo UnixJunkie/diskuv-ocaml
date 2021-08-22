@@ -11,6 +11,7 @@ Getting Started with Diskuv OCaml
 
    self
    doc/AdvancedInstalls/index
+   doc/Troubleshooting
    doc/LocalProject
    doc/FutureExtensions
 
@@ -192,9 +193,9 @@ TWO. *Download the starter project.*
 
   .. code-block:: PowerShell
 
-    if (-not (Test-Path -Path ~\DiskuvProjects)) { New-Item -ItemType Directory -Path ~\DiskuvProjects }
-    cd ~\DiskuvProjects
-    git clone --recursive https://github.com/diskuv/diskuv-ocaml-starter
+    if (-not (Test-Path -Path ~\DiskuvOCamlProjects)) { New-Item -ItemType Directory -Path ~\DiskuvOCamlProjects }
+    Invoke-WebRequest -Uri "https://github.com/diskuv/diskuv-ocaml/releases/download/v0.1.0-prerel3/release.zip" -OutFile "$env:TEMP\diskuv-ocaml-release.zip"
+    Expand-Archive -Path "$env:TEMP\diskuv-ocaml-release.zip" -DestinationPath ~\DiskuvOCamlProjects -Force
 
 THREE. *Run the Install World script.*
 """"""""""""""""""""""""""""""""""""""
@@ -210,10 +211,13 @@ THREE. *Run the Install World script.*
 
    .. code-block:: PowerShell
 
-     cd ~\DiskuvProjects\diskuv-ocaml-starter
-     vendor\diskuv-ocaml\setup\windows\install-world.ps1
+     cd ~\DiskuvOCamlProjects\diskuv-ocaml
+     installtime\windows\install-world.ps1
 
-   The rest of the installation is automated and will look like
+   Depending on your Windows "User Account Control" settings your machine may prompt to click "Yes"
+   to install Visual Studio Build Tools and to install Git; you will only be prompted if you or an
+   Administator has not installed those two programs already. The rest of the installation is completely
+   click-free:
 
    .. image:: doc/Intro-install-world.png
       :width: 600

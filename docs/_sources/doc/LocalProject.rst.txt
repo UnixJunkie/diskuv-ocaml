@@ -43,7 +43,7 @@ Run:
 
 .. code-block:: PowerShell
 
-    .\vendor\diskuv-ocaml\manage\windows\upgrade.ps1
+    .\vendor\diskuv-ocaml\runtime\windows\upgrade.ps1
 
 If there is an upgrade of ``Diskuv OCaml`` available it will automate as much as possible,
 and if necessary give you further instructions to complete the upgrade.

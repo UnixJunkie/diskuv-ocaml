@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>macOS &mdash; Diskuv OCaml  documentation</title>
+  <title>Troubleshooting &mdash; Diskuv OCaml  documentation</title>
   
 
   
@@ -37,7 +37,8 @@
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="prev" title="Windows 10 on Linux with VMware Player" href="AdvancedInstalls/WindowsInVMwarePlayer.html" /> 
+    <link rel="next" title="Local Projects" href="LocalProject.html" />
+    <link rel="prev" title="Windows Administrator Installation" href="AdvancedInstalls/WindowsAdministrator.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -85,14 +86,16 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../index.html">Getting Started with Diskuv OCaml</a></li>
 <li class="toctree-l1"><a class="reference internal" href="AdvancedInstalls/index.html">Advanced Installations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Troubleshooting.html">Troubleshooting</a></li>
-<li class="toctree-l1"><a class="reference internal" href="LocalProject.html">Local Projects</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="FutureExtensions.html">Future Extensions</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="AdvancedInstalls/WindowsInVirtualBox.html">Windows 10 on macOS/Linux with VirtualBox</a></li>
-<li class="toctree-l2"><a class="reference internal" href="AdvancedInstalls/WindowsInVMwarePlayer.html">Windows 10 on Linux with VMware Player</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">macOS</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Troubleshooting</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#problem-vendor-diskuv-ocaml-runtime-unix-standard-mk-no-such-file-or-directory">Problem - vendor/diskuv-ocaml/runtime/unix/standard.mk: No such file or directory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#root-cause">Root Cause</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#solution">Solution</a></li>
 </ul>
 </li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="LocalProject.html">Local Projects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FutureExtensions.html">Future Extensions</a></li>
 </ul>
 
             
@@ -138,15 +141,13 @@
     
       <li><a href="../index.html">Docs</a> &raquo;</li>
         
-          <li><a href="FutureExtensions.html">Future Extensions</a> &raquo;</li>
-        
-      <li>macOS</li>
+      <li>Troubleshooting</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
             
-            <a href="../_sources/doc/macOS.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/doc/Troubleshooting.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -159,23 +160,32 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="macos">
-<h1>macOS<a class="headerlink" href="#macos" title="Permalink to this headline">¶</a></h1>
-<p>Install <a class="reference external" href="https://brew.sh/">Homebrew</a> if you haven’t done so already.
-Open <cite>Terminal</cite> and then run:</p>
-<div class="highlight-zsh notranslate"><div class="highlight"><pre><span></span>/bin/bash -c <span class="s2">&quot;</span><span class="k">$(</span>curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh<span class="k">)</span><span class="s2">&quot;</span>
-<span class="nb">echo</span> <span class="s1">&#39;eval &quot;$(/opt/homebrew/bin/brew shellenv)&quot;&#39;</span> &gt;&gt; ~/.zprofile
-<span class="nb">eval</span> <span class="s2">&quot;</span><span class="k">$(</span>/opt/homebrew/bin/brew shellenv<span class="k">)</span><span class="s2">&quot;</span>
+  <div class="section" id="troubleshooting">
+<h1>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="problem-vendor-diskuv-ocaml-runtime-unix-standard-mk-no-such-file-or-directory">
+<h2>Problem - vendor/diskuv-ocaml/runtime/unix/standard.mk: No such file or directory<a class="headerlink" href="#problem-vendor-diskuv-ocaml-runtime-unix-standard-mk-no-such-file-or-directory" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="root-cause">
+<h3>Root Cause<a class="headerlink" href="#root-cause" title="Permalink to this headline">¶</a></h3>
+<p>This is typically an indication that your git repository was not cloned with
+the recursive flag, as in:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/diskuv/diskuv-ocaml-starter
 </pre></div>
 </div>
-<p>Install Git if you haven’t done so already. If you have XCode you already
-have Git. Otherwise run the following in <cite>Terminal</cite>:</p>
-<div class="highlight-zsh notranslate"><div class="highlight"><pre><span></span>brew install git
+<p>instead of the correct:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone --recursive https://github.com/diskuv/diskuv-ocaml-starter
 </pre></div>
 </div>
-<p>Install Visual Studio Code if you haven’t done so already.
-Go to <a class="reference external" href="https://code.visualstudio.com/Download">Visual Studio Code Download</a>
-and select the Mac button.</p>
+<p>When you leave out the <code class="docutils literal notranslate"><span class="pre">--recursive</span></code> option then Git will not fetch any
+of the submodules. Diskuv OCaml requires that you load it as a Git submodule.</p>
+</div>
+<div class="section" id="solution">
+<h3>Solution<a class="headerlink" href="#solution" title="Permalink to this headline">¶</a></h3>
+<p>Run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git submodule update --init --recursive
+</pre></div>
+</div>
+</div>
+</div>
 </div>
 
 
@@ -186,8 +196,10 @@ and select the Mac button.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
+        <a href="LocalProject.html" class="btn btn-neutral float-right" title="Local Projects" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
-        <a href="AdvancedInstalls/WindowsInVMwarePlayer.html" class="btn btn-neutral float-left" title="Windows 10 on Linux with VMware Player" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+        <a href="AdvancedInstalls/WindowsAdministrator.html" class="btn btn-neutral float-left" title="Windows Administrator Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
