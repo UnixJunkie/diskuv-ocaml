@@ -332,7 +332,21 @@ OCaml friendly IDEs like Visual Studio Code and Emacs</p>
 </dl>
 </li>
 </ul>
-<p><strong>All of the above components are open source with liberal licenses.</strong></p>
+<p>The <em>Diskuv OCaml</em> distribution will automatically install the following components if missing from your system:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>git</dt><dd><p><a class="reference external" href="https://git-scm.com/book/en/v2/Getting-Started-About-Version-Control">Git</a>, the standard version control for
+getting, saving and sharing source code.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>cl, link</dt><dd><p><a class="reference external" href="https://docs.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-build-tools?view=vs-2019#desktop-development-with-c">Visual Studio Build Tools</a>,
+the official Microsoft tools for building modern C/C++ apps for Windows</p>
+</dd>
+</dl>
+</li>
+</ul>
 </div>
 <div class="section" id="how-to-install">
 <span id="id2"></span><h2>How to Install<a class="headerlink" href="#how-to-install" title="Permalink to this headline">¶</a></h2>
@@ -353,39 +367,33 @@ hours. The <em>Diskuv OCaml</em> installer will be downloading and doing intensi
 and you are free to do other things on your computer while it downloads and compiles.</p></li>
 </ul>
 </div>
-<div class="section" id="four-step-starter-instructions">
-<h3>Four-Step Starter Instructions<a class="headerlink" href="#four-step-starter-instructions" title="Permalink to this headline">¶</a></h3>
-<div class="section" id="one-get-git">
-<h4>ONE. <em>Get Git.</em><a class="headerlink" href="#one-get-git" title="Permalink to this headline">¶</a></h4>
-<div class="sidebar">
-<p class="sidebar-title">Want to check if Git is installed?</p>
-<ol class="arabic simple">
-<li><p>Open PowerShell (press the Windows key ⊞, type “PowerShell” and then Open <code class="docutils literal notranslate"><span class="pre">Windows</span> <span class="pre">PowerShell</span></code>).</p></li>
-<li><p>Run <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">--version</span></code></p></li>
-<li><p>If you see a version number like <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">version</span> <span class="pre">2.32.0.windows.2</span></code> then you have Git.</p></li>
-</ol>
-</div>
-<p>You will need Git to <a class="reference external" href="https://git-scm.com/book/en/v2/Getting-Started-About-Version-Control">get and save the source code</a>
-of local projects on your machine, or to
-<a class="reference external" href="https://docs.github.com/en/get-started/quickstart">share your source code</a> with others. Download <a class="reference external" href="https://gitforwindows.org/">Git for Windows</a> if you do not
-have Git installed on your machine.</p>
-</div>
-<div class="section" id="two-download-the-starter-project">
-<h4>TWO. <em>Download the starter project.</em><a class="headerlink" href="#two-download-the-starter-project" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="two-step-installation-instructions">
+<h3>Two-Step Installation Instructions<a class="headerlink" href="#two-step-installation-instructions" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="one-download-the-distribution">
+<h4>ONE. <em>Download the distribution.</em><a class="headerlink" href="#one-download-the-distribution" title="Permalink to this headline">¶</a></h4>
 <ol class="arabic simple">
 <li><p>Open PowerShell (press the Windows key ⊞, type “PowerShell” and then Open <code class="docutils literal notranslate"><span class="pre">Windows</span> <span class="pre">PowerShell</span></code>).</p></li>
 <li><p>Run the following in PowerShell to fetch the starter project from its Git repository:</p></li>
 </ol>
 <blockquote>
-<div><div class="highlight-PowerShell notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="p">(</span><span class="o">-not</span> <span class="p">(</span><span class="nb">Test-Path</span> <span class="n">-Path</span> <span class="p">~\</span><span class="n">DiskuvOCamlProjects</span><span class="p">))</span> <span class="p">{</span> <span class="nb">New-Item</span> <span class="n">-ItemType</span> <span class="n">Directory</span> <span class="n">-Path</span> <span class="p">~\</span><span class="n">DiskuvOCamlProjects</span> <span class="p">}</span>
-<span class="nb">Invoke-WebRequest</span> <span class="n">-Uri</span> <span class="s2">&quot;https://github.com/diskuv/diskuv-ocaml/releases/download/v0.1.0-prerel3/release.zip&quot;</span> <span class="n">-OutFile</span> <span class="s2">&quot;$env:TEMP\diskuv-ocaml-release.zip&quot;</span>
-<span class="nb">Expand-Archive</span> <span class="n">-Path</span> <span class="s2">&quot;$env:TEMP\diskuv-ocaml-release.zip&quot;</span> <span class="n">-DestinationPath</span> <span class="p">~\</span><span class="n">DiskuvOCamlProjects</span> <span class="n">-Force</span>
+<div><div class="highlight-PowerShell notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="p">(</span><span class="o">-not</span> <span class="p">(</span><span class="nb">Test-Path</span> <span class="n">-Path</span> <span class="p">~\</span><span class="n">DiskuvOCamlProjects</span><span class="p">))</span> <span class="p">{</span>
+  <span class="nb">New-Item</span> <span class="n">-ItemType</span> <span class="n">Directory</span> <span class="n">-Path</span> <span class="p">~\</span><span class="n">DiskuvOCamlProjects</span>
+<span class="p">}</span>
+
+<span class="nb">Invoke-WebRequest</span> <span class="p">`</span>
+  <span class="n">-Uri</span> <span class="s2">&quot;https://github.com/diskuv/diskuv-ocaml/releases/download/v0.1.0-prerel3/release.zip&quot;</span> <span class="p">`</span>
+  <span class="n">-OutFile</span> <span class="s2">&quot;$env:TEMP\diskuv-ocaml-release.zip&quot;</span>
+
+<span class="nb">Expand-Archive</span> <span class="p">`</span>
+  <span class="n">-Path</span> <span class="s2">&quot;$env:TEMP\diskuv-ocaml-release.zip&quot;</span> <span class="p">`</span>
+  <span class="n">-DestinationPath</span> <span class="p">~\</span><span class="n">DiskuvOCamlProjects</span> <span class="p">`</span>
+  <span class="n">-Force</span>
 </pre></div>
 </div>
 </div></blockquote>
 </div>
-<div class="section" id="three-run-the-install-world-script">
-<h4>THREE. <em>Run the Install World script.</em><a class="headerlink" href="#three-run-the-install-world-script" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="two-run-the-install-world-script">
+<h4>TWO. <em>Run the Install World script.</em><a class="headerlink" href="#two-run-the-install-world-script" title="Permalink to this headline">¶</a></h4>
 <div class="sidebar">
 <p class="sidebar-title">Do you have 4 hours?</p>
 <p>Be prepared to wait for at least 4 hours for the installer to finish. In the meantime you can still use your
@@ -396,6 +404,7 @@ computer for other things like web browsing.</p>
 it is not already open.</p></li>
 <li><p>Run the following in PowerShell to run the installer script:</p>
 <div class="highlight-PowerShell notranslate"><div class="highlight"><pre><span></span><span class="nb">cd </span><span class="p">~\</span><span class="n">DiskuvOCamlProjects</span><span class="p">\</span><span class="n">diskuv-ocaml</span>
+
 <span class="n">installtime</span><span class="p">\</span><span class="n">windows</span><span class="p">\</span><span class="nb">install-world</span><span class="p">.</span><span class="n">ps1</span>
 </pre></div>
 </div>
@@ -407,8 +416,9 @@ click-free:</p>
 </li>
 </ol>
 </div>
-<div class="section" id="four-open-in-visual-studio-code">
-<h4>FOUR. <em>Open in Visual Studio Code.</em><a class="headerlink" href="#four-open-in-visual-studio-code" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="bonus-open-in-visual-studio-code">
+<h4>BONUS. <em>Open in Visual Studio Code.</em><a class="headerlink" href="#bonus-open-in-visual-studio-code" title="Permalink to this headline">¶</a></h4>
+<p><em>TODO</em>. This section needs to go into the “starter” project and work it through example or tutorial.</p>
 <div class="sidebar">
 <p class="sidebar-title">Visual Studio Code is optional.</p>
 <p>Using Visual Studio Code is optional but strongly recommended! The only other development environment
@@ -416,7 +426,7 @@ that supports OCaml well is Emacs.</p>
 </div>
 <p><em>TODO</em>. Be sure to include VS Code plugin. Include instructions to install VS Code (optional but strongly recommend) as well.</p>
 <p><em>TODO</em>. Be sure to open the terminal and do a build.</p>
-<p>Finished with the starter? It is time to create your own projects. <em>TODO</em>.</p>
+<p>Finished? It is time to create your own projects and look at the starter project.</p>
 </div>
 </div>
 </div>
