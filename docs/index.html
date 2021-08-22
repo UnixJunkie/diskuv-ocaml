@@ -405,6 +405,8 @@ it is not already open.</p></li>
 <li><p>Run the following in PowerShell to run the installer script:</p>
 <div class="highlight-PowerShell notranslate"><div class="highlight"><pre><span></span><span class="nb">cd </span><span class="p">~\</span><span class="n">DiskuvOCamlProjects</span><span class="p">\</span><span class="n">diskuv-ocaml</span>
 
+<span class="nb">Set-ExecutionPolicy</span> <span class="n">-ExecutionPolicy</span> <span class="n">Unrestricted</span> <span class="n">-Scope</span> <span class="k">Process</span> <span class="n">-Force</span>
+
 <span class="n">installtime</span><span class="p">\</span><span class="n">windows</span><span class="p">\</span><span class="nb">install-world</span><span class="p">.</span><span class="n">ps1</span>
 </pre></div>
 </div>

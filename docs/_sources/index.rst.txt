@@ -214,6 +214,8 @@ TWO. *Run the Install World script.*
 
      cd ~\DiskuvOCamlProjects\diskuv-ocaml
 
+     Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope Process -Force
+
      installtime\windows\install-world.ps1
 
    Depending on your Windows "User Account Control" settings your machine may prompt to click "Yes"
