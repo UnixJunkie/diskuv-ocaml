@@ -27,7 +27,7 @@ This is easiest to see with an example.
 
       PS1> git clone https://gitlab.com/diskuv/diskuv-ocaml-starter.git
 
-You now have a local project in ``~\DiskuvOCamlProjects\diskuv-ocaml-starter``.
+You now have a local project in ``~\DiskuvOCamlProjects\diskuv-ocaml-starter``!
 
 We can compile the source code by running the ``build-dev`` target:
 
@@ -38,7 +38,7 @@ We can compile the source code by running the ``build-dev`` target:
        PS1> ./make build-dev
 
 but many OCaml programs
-will need to install more packages.  and/or compile C code.
+will need to install more packages and/or compile C code.
 
 We recommend you use a Diskuv OCaml
 local project to do so. Here is a starter project that does that ...
