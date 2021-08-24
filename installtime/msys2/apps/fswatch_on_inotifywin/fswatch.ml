@@ -13,6 +13,24 @@ let events_ref = ref []
 
 let includes_ref = ref []
 
+(* dune --watch has a bug where it excludes only UNIX paths like /_build. That causes Z:\source\diskuv-ocaml-starter\_build for example
+   to be missed, which renders dune --watch useless on Windows (TODO: we haven't filed an issue yet).
+
+   For now, we add in the same directories that Dune 2.9.0 does (just Windows-ized), and we also add in a few paths
+   that are specific to Diskuv OCaml.
+*)
+let exclude_auto_added = [
+  (* add in the same directories that Dune 2.9.0 does (just Windows-ized) *)
+  {|\\#[^#]*#$|};
+  {|\\\..+|};
+  {|\\_esy|};
+  {|\\_opam|};
+  {|\\_build|};
+
+  (* paths specific to Diskuv OCaml distribution, or paths we simply want to add *)
+  {|\\\.git|};
+  {|\\_tmp|}
+]
 let excludes_ref = ref []
 
 let paths_ref = ref []
@@ -58,10 +76,10 @@ let () =
   in
 
   Format.fprintf Format.err_formatter
-    "@[fswatch args = (@]@[@[recursive=%b;@]@ @[event=%a;@]@ @[include=%a;@]@ \
-     @[exclude=%a;@]@ @[paths=%a@])@]@\n"
+    "@\n@[fswatch args = (@]@[@[recursive=%b;@]@ @[event=%a;@]@ @[include=%a;@]@ \
+     @[exclude=%a;@]@ @[exclude_auto_added=%a;@]@ @[paths=%a@])@]@\n"
     !recursive_ref list_pp !events_ref list_pp !includes_ref list_pp
-    !excludes_ref list_pp !paths_ref;
+    !excludes_ref list_pp exclude_auto_added list_pp !paths_ref;
 
   let event_csv =
     List.filter_map
@@ -146,7 +164,8 @@ let () =
     [ inotifywait_loc; "--monitor"; "--format"; {|%w\%f|} ]
     @ (if !recursive_ref then [ "--recursive" ] else [])
     @ (if event_csv = "" then [] else [ "--event"; event_csv ])
-    @ (List.map (fun v -> [ "--excludei"; v ]) !excludes_ref |> List.flatten)
+    (* can only specify --excludei once so we use an regexp OR expression *)
+    @ [ "--excludei"; String.concat "|" (!excludes_ref @ exclude_auto_added) ]
     @ !paths_ref
   in
 

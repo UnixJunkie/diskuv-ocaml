@@ -15,8 +15,15 @@ nullstring :=
 space := $(nullstring) # end of the line
 comma := ,
 
+# ----------
 # Defaults
+
 DKML_BUILD_TRACE ?= ON
+# Either `preserve` or `clear-on-rebuild`
+DKML_TERMINAL_PERSISTENCE ?= clear-on-rebuild
+
+# ----------
+
 
 # DKML_PLATFORMS
 #
@@ -533,8 +540,12 @@ dkml-report: buildconfig/dune
 			fi; \
 	))
 
+# Sleep for 5 seconds on Dune crash so that developer has plenty of time to press Ctrl-C to kill the while loop
 .PHONY: dkml-devmode
-dkml-devmode: build-dev-Debug
-	DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) $(DKML_DIR)/runtime/unix/platform-dune-exec -p dev -b Debug \
-		build --watch --terminal-persistence=clear-on-rebuild \
-		$(if $(DKML_NONEMPTY_IF_BUILD_HOST_IS_WINDOWS),$(DUNETARGET_TEST_WINDOWS),$(DUNETARGET_TEST_LINUX))
+dkml-devmode: quickbuild-dev-Debug
+	while true; do \
+		DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) $(DKML_DIR)/runtime/unix/platform-dune-exec -p dev -b Debug \
+			build --watch --terminal-persistence=clear-on-rebuild \
+			$(if $(DKML_NONEMPTY_IF_BUILD_HOST_IS_WINDOWS),$(DUNETARGET_TEST_WINDOWS),$(DUNETARGET_TEST_LINUX)); \
+		sleep 5 || exit 0; \
+	done

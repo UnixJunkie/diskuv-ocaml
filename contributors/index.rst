@@ -239,34 +239,48 @@ You have completed the installation of *Diskuv OCaml*. Let us try some of the th
    .. code-block:: ps1con
 
       PS> utop
+      > ──────────┬─────────────────────────────────────────────────────────────┬──────────
+      >           │ Welcome to utop version 2.8.0 (using OCaml version 4.12.0)! │
+      >           └─────────────────────────────────────────────────────────────┘
+      >
+      > Type #utop_help for help about using utop.
+      >
+      > ─( 19:03:24 )─< command 0 >─────────────────────────────────────────{ counter: 0 }─
+      > utop #
 
 3. You may get some harmless warnings (ex. ``failed to lock file``) that you can safely ignore. Now
    let us try to enter some basic OCaml expressions ... be sure to
    include the ``;;`` and then press ENTER after each line:
 
-   .. code-block:: ocaml
+   .. code-block:: tcshcon
 
-      3.5 +. 6. ;;
-      30_000_000 / 300_000 ;;
-      let square x = x * x ;;
-      square 2 ;;
-      square (square 2) ;;
+      utop #> 3.5 +. 6. ;;
+      > - : float = 9.5
+      utop #> 30_000_000 / 300_000 ;;
+      > - : int = 100
+      utop #> let square x = x * x ;;
+      > val square : int -> int = <fun>
+      utop #> square 2 ;;
+      > - : int = 4
+      utop #> square (square 2) ;;
+      > - : int = 16
 
 4. You probably want to do a lot more than that! You may want to edit your code in a easy-to-use editor
    with syntax highlighting, type inspection and auto-complete
    (an "integrated development environment" or more simply an **IDE**). You may also want to use other
    people's code packages. Right now if you tried to use the ``Base`` package, for example, you will get
-   an ``Error: Unbound module Base`` error:
+   an error:
 
-   .. code-block:: ocaml
+   .. code-block:: tcshcon
 
-      open Base ;;
+      utop #> open Base ;;
+      > Error: Unbound module Base
 
 5. Leave the ``utop`` application by typing:
 
-  .. code-block:: ocaml
+  .. code-block:: tcshcon
 
-    #quit ;;
+    utop #> #quit ;;
 
 :ref:`Local Projects`, which let you edit code in an IDE and import code packages, are
 the topic of the next section.

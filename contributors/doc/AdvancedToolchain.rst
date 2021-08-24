@@ -94,7 +94,7 @@ First we replicated the problem we had during compilation by following the boile
 
     [core_kernel.v0.14.2]$ opam install ./core_kernel.opam -v --debug-level 2
     > #=== ERROR while compiling core_kernel.v0.14.0 ================================#
-    > # context     2.1.0 | win32/x86_64 | ocaml-variants.4.12.0+msvc64+msys2 | pinned(git+file://C:/Users/user/AppData/Local/Programs/DiskuvOCaml/1/tools/MSYS2/tmp/core_kernel.v0.14.2#master#6e50f367)
+    > # context     2.1.0 | win32/x86_64 | ocaml-variants.4.12.0+msvc64+msys2 | pinned(git+file://C:/Users/you/AppData/Local/Programs/DiskuvOCaml/1/tools/MSYS2/tmp/core_kernel.v0.14.2#master#6e50f367)
     > # path        Z:\source\diskuv-ocaml-starter\build\dev\Debug\_opam\.opam-switch\build\core_kernel.v0.14.0
     > # command     Z:\source\diskuv-ocaml-starter\build\dev\Debug\_opam\bin\dune.exe build -p core_kernel -j 11
     > # exit-code   1
@@ -102,7 +102,7 @@ First we replicated the problem we had during compilation by following the boile
     > # output-file ~\.opam\log\core_kernel-44284-942604.out
     > ### output ###
     > #         bash src/config.h,src/rt-flags (exit 1)
-    > # (cd _build/default/src && C:\Users\user\AppData\Local\Programs\DiskuvOCaml\1\tools\MSYS2\usr\bin\bash.exe -e -u -o pipefail -c "cp Z:\source\diskuv-ocaml-starter\build\dev\Debug\_opam\lib\jst-config\config.h Z:\source\diskuv-ocaml-starter\build\dev\Debug\_opam\lib\jst-config\rt-flags .")
+    > # (cd _build/default/src && C:\Users\you\AppData\Local\Programs\DiskuvOCaml\1\tools\MSYS2\usr\bin\bash.exe -e -u -o pipefail -c "cp Z:\source\diskuv-ocaml-starter\build\dev\Debug\_opam\lib\jst-config\config.h Z:\source\diskuv-ocaml-starter\build\dev\Debug\_opam\lib\jst-config\rt-flags .")
     > # cp: cannot stat 'Z:sourcediskuv-ocaml-starterbuilddevDebug_opamlibjst-configconfig.h': No such file or directory
     > # cp: cannot stat 'Z:sourcediskuv-ocaml-starterbuilddevDebug_opamlibjst-configrt-flags': No such file or directory
 
@@ -253,7 +253,7 @@ We check to see if Problem 2 is fixed, and discover a third problem:
 
     [core_kernel.v0.14.2]$ opam install ./core_kernel.opam -v --debug-level 2
     > #=== ERROR while compiling core_kernel.v0.14.0 ================================#
-    > # context     2.1.0 | win32/x86_64 | ocaml-variants.4.12.0+msvc64+msys2 | pinned(git+file://C:/Users/user/AppData/Local/Programs/DiskuvOCaml/1/tools/MSYS2/tmp/core_kernel.v0.14.2#master#a5cf803a)
+    > # context     2.1.0 | win32/x86_64 | ocaml-variants.4.12.0+msvc64+msys2 | pinned(git+file://C:/Users/you/AppData/Local/Programs/DiskuvOCaml/1/tools/MSYS2/tmp/core_kernel.v0.14.2#master#a5cf803a)
     > # path        Z:\source\diskuv-ocaml-starter\build\dev\Debug\_opam\.opam-switch\build\core_kernel.v0.14.0
     > # command     Z:\source\diskuv-ocaml-starter\build\dev\Debug\_opam\bin\dune.exe build -p core_kernel -j 11
     > # exit-code   1
@@ -359,7 +359,7 @@ And then we create the Opam file and patch file from the `Creating your own pack
     > λ removed   core_kernel.v0.14.0
     > Done.
     [core_kernel.v0.14.2]$ opam pin remove core_kernel
-    > Ok, core_kernel is no longer pinned to git+file://C:/Users/user/AppData/Local/Programs/DiskuvOCaml/1/tools/MSYS2/tmp/core_kernel.v0.14.2#master (version v0.14.0)
+    > Ok, core_kernel is no longer pinned to git+file://C:/Users/you/AppData/Local/Programs/DiskuvOCaml/1/tools/MSYS2/tmp/core_kernel.v0.14.2#master (version v0.14.0)
     [core_kernel.v0.14.2]$ git diff baseline-patch > /tmp/custom.patch
     [core_kernel.v0.14.2]$ opam show core_kernel -f opam-file > /tmp/opam
     [core_kernel.v0.14.2]$ echo 'patches: ["custom.patch"]' >> /tmp/opam
@@ -399,9 +399,9 @@ FIRST, find which OCaml package is failing and check out that package with:
 
     opam source PACKAGE_NAME
 
-    The version of the package is important. Using the above command
-    will check out the *version* of the package that Opam thinks should
-    be installed, which is almost always what you should be patching.
+The version of the package is important. Using the above command
+will check out the *version* of the package that Opam thinks should
+be installed, which is almost always what you should be patching.
 
 SECOND, create a local git repository; we'll be using ``git`` to create
 our patch:
