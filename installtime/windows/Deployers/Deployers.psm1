@@ -72,6 +72,7 @@
 $ErrorActionPreference = "Stop"
 
 $DeployStateJson = "deploy-state-v1.json"
+$Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
 
 $DeploySlotInitValue = [ordered]@{ "id" = $null; "lastepochms" = 0; "reserved" = $false; "success" = $false }
 $DeployStateInitValue = [PSCustomObject]@(
@@ -310,7 +311,8 @@ function Get-BlueGreenDeployState {
         [Parameter(Mandatory = $true)]
         $ParentPath
     )
-    $jsState = Get-Content -Path "$ParentPath\$DeployStateJson" | ConvertFrom-Json
+    $jsState = [System.IO.File]::ReadAllText("$ParentPath\$DeployStateJson", $Utf8NoBomEncoding)
+    $jsState = $jsState | ConvertFrom-Json
     if ($jsState.Count -ne 3) {
         throw "$ParentPath\$DeployStateJson was not an array of 3"
     }
@@ -357,7 +359,15 @@ function Set-BlueGreenDeployState {
     if ($null -eq $DeployState.reserved) {
         throw "Null 'reserved' deploy state"
     }
-    $DeployState | ConvertTo-Json | Out-File -Encoding "utf8" -FilePath "$ParentPath\$DeployStateJson"
+    if (Test-Path "$ParentPath\$DeployStateJson") {
+        Copy-Item "$ParentPath\$DeployStateJson" -Destination "$ParentPath\$DeployStateJson.bak" -Force
+    }
+    $Str = $DeployState | ConvertTo-Json
+    [System.IO.File]::WriteAllText("$ParentPath\$DeployStateJson.tmp", $Str, $Utf8NoBomEncoding) 
+    if (Test-Path "$ParentPath\$DeployStateJson") {
+        Remove-Item "$ParentPath\$DeployStateJson" -Force
+    }
+    Rename-Item "$ParentPath\$DeployStateJson.tmp" "$DeployStateJson" -Force
 }
 
 # Step-BlueGreenDeploySlotDryRun

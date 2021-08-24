@@ -52,9 +52,6 @@ shift $((OPTIND -1))
 DKMLDIR=$(dirname "$0")
 DKMLDIR=$(cd "$DKMLDIR/../.." && pwd)
 if [[ ! -e "$DKMLDIR/.dkmlroot" ]]; then echo "FATAL: Not embedded in a 'diskuv-ocaml' repository" >&2 ; exit 1; fi
-TOPDIR=$(git -C "$DKMLDIR/.." rev-parse --show-toplevel)
-TOPDIR=$(cd "$TOPDIR" && pwd)
-if [[ ! -e "$TOPDIR/dune-project" ]]; then echo "FATAL: Not embedded in a Diskuv OCaml local project" >&2 ; exit 1; fi
 
 PLATFORM=dev # not actually in the dev platform but we are just pulling the "common" tool functions (so we can choose whatever platform we like)
 

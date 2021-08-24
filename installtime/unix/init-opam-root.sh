@@ -2,7 +2,7 @@
 # -------------------------------------------------------
 # init-opam-root.sh PLATFORM
 #
-# Purpose: 
+# Purpose:
 # 1. Install an OPAMROOT (`opam init`) in $env:USERPROFILE/.opam or
 #    the PLATFORM's opam-root/ folder.
 # 2. Especially for Windows, optionally install a working
@@ -27,6 +27,8 @@ DKMLDIR=$(cd "$DKMLDIR/../.." && pwd)
 
 # shellcheck disable=SC1091
 source "$DKMLDIR"/runtime/unix/_common_tool.sh
+# shellcheck disable=SC1091
+source "$DKMLDIR"/.dkmlroot
 
 # To be portable whether we build scripts in the container or not, we
 # change the directory to always be in the TOPDIR (just like the container
@@ -35,6 +37,34 @@ cd "$TOPDIR"
 
 # From here onwards everything should be run using RELATIVE PATHS ...
 # >>>>>>>>>
+
+# Make a versioned opam-repositories
+#
+# Q: Why aren't we using an HTTP(S) site? Yep, we could have done `opam admin index`
+# and followed the https://opam.ocaml.org/doc/Manual.html#Repositories instructions.
+# It is not hard _but_ we want a) versioning of the repository to coincide with
+# the version of Diskuv OCaml and b) ability to
+# edit the repository for `AdvancedToolchain.rst` patching. We could have done
+# both with HTTP(S) but simpler is usually better.
+#
+# TODO: This implementation won't work in containers; needs a mount point for the opam repositories, and
+# an @@EXPAND_DKMLPARENTHOME@@ macro
+set_dkmlparenthomedir
+install -d "$DKMLPARENTHOME_BUILDHOST/opam-repositories"
+if is_windows_build_machine; then
+    # shellcheck disable=SC2154
+    OPAMREPOS_MIXED=$(cygpath -am "$DKMLPARENTHOME_BUILDHOST\\opam-repositories\\$dkml_root_version")
+    OPAMREPOS_UNIX=$(cygpath -au "$DKMLPARENTHOME_BUILDHOST\\opam-repositories\\$dkml_root_version")
+    # shellcheck disable=SC2154
+    DISKUVOCAMLHOME_UNIX=$(cygpath -au "$DiskuvOCamlHome")
+    rsync -a \
+        "$DISKUVOCAMLHOME_UNIX/tools/ocaml-opam/$OPAM_PORT_FOR_SWITCHES_IN_WINDOWS-$OPAM_ARCH_IN_WINDOWS"/cygwin64/home/opam/opam-repository/ \
+        "$OPAMREPOS_UNIX"/fdopen-mingw
+else
+    OPAMREPOS_MIXED="$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version"
+    OPAMREPOS_UNIX="$OPAMREPOS_MIXED"
+fi
+rsync -a "$DKMLDIR"/etc/opam-repositories/ "$OPAMREPOS_UNIX"
 
 # -----------------------
 # BEGIN opam init
@@ -59,7 +89,7 @@ REPONAME_PENDINGREMOVAL=pendingremoval-opam-repo
 if is_windows_build_machine; then
     # For Windows we set `opam init --bare` so we can configure its settings before adding the OCaml system compiler.
     # We'll use `pendingremoval` as a signal that we can remove it later if it is the 'default' repository
-    OPAM_INIT_ARGS+=(--kind local --bare "@@EXPAND_DKMLDIR@@/etc/opam-repositories/$REPONAME_PENDINGREMOVAL")
+    OPAM_INIT_ARGS+=(--kind local --bare "$OPAMREPOS_MIXED/$REPONAME_PENDINGREMOVAL")
 fi
 if ! is_minimal_opam_root_present "$OPAMROOTDIR_BUILDHOST"; then
     "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" init "${OPAM_INIT_ARGS[@]}"
@@ -86,15 +116,15 @@ fi
 # If we don't we get make a repo named "default" in opam 2.1.0 the following will happen:
 #     #=== ERROR while compiling ocamlbuild.0.14.0 ==================================#
 #     Sys_error("C:\\Users\\user\\.opam\\repo\\default\\packages\\ocamlbuild\\ocamlbuild.0.14.0\\files\\ocamlbuild-0.14.0.patch: No such file or directory")
-if [[ ! -e "$OPAMROOTDIR_BUILDHOST/repo/diskuv" && ! -e "$OPAMROOTDIR_BUILDHOST/repo/diskuv.tar.gz" ]]; then
-    OPAMREPO_DISKUV="@@EXPAND_DKMLDIR@@/etc/opam-repositories/diskuv-opam-repo"
-    "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" repository add diskuv "$OPAMREPO_DISKUV" --yes --dont-select --rank=1
+if [[ ! -e "$OPAMROOTDIR_BUILDHOST/repo/diskuv-$dkml_root_version" && ! -e "$OPAMROOTDIR_BUILDHOST/repo/diskuv-$dkml_root_version.tar.gz" ]]; then
+    OPAMREPO_DISKUV="$OPAMREPOS_MIXED/diskuv-opam-repo"
+    "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" repository add diskuv-"$dkml_root_version" "$OPAMREPO_DISKUV" --yes --dont-select --rank=1
 fi
-if is_windows_build_machine && [[ ! -e "$OPAMROOTDIR_BUILDHOST/repo/fdopen-mingw" && ! -e "$OPAMROOTDIR_BUILDHOST/repo/fdopen-mingw.tar.gz" ]]; then
+if is_windows_build_machine && [[ ! -e "$OPAMROOTDIR_BUILDHOST/repo/fdopen-mingw-$dkml_root_version" && ! -e "$OPAMROOTDIR_BUILDHOST/repo/fdopen-mingw-$dkml_root_version.tar.gz" ]]; then
     # Use the snapshot of fdopen-mingw (https://github.com/fdopen/opam-repository-mingw) that comes with ocaml-opam Docker image.
     # `--kind local` is so we get file:/// rather than git+file:/// which would waste time with git
-    OPAMREPO_WINDOWS_OCAMLOPAM="@@EXPAND_WINDOWS_DISKUVOCAMLHOME_MIXED@@/tools/ocaml-opam/$OPAM_PORT_FOR_SWITCHES_IN_WINDOWS-$OPAM_ARCH_IN_WINDOWS/cygwin64/home/opam/opam-repository"
-    "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" repository add fdopen-mingw "$OPAMREPO_WINDOWS_OCAMLOPAM" --yes --dont-select --kind local --rank=2
+    OPAMREPO_WINDOWS_OCAMLOPAM="$OPAMREPOS_MIXED/fdopen-mingw"
+    "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" repository add fdopen-mingw-"$dkml_root_version" "$OPAMREPO_WINDOWS_OCAMLOPAM" --yes --dont-select --kind local --rank=2
 fi
 # check if we can remove 'default' if it was pending removal.
 # sigh, we have to parse non-machine friendly output. we'll do safety checks.

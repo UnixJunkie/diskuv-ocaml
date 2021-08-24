@@ -59,7 +59,7 @@ if not defined DKMAKE_INTERNAL_CYGPATH (
 if %ERRORLEVEL% neq 0 (
 	echo.
 	echo.The 'cygpath' command was not found. Make sure you have run
-	echo.the script 'scripts\setup\windows\install-world.ps1' once.
+	echo.the script 'installtime\windows\install-world.ps1' once.
 	echo.
 	exit /b 1
 )
@@ -131,7 +131,7 @@ if not defined DKMAKE_INTERNAL_MAKE (
 if %ERRORLEVEL% neq 0 (
 	echo.
 	echo.The 'make' command was not found. Make sure you have run
-	echo.the command 'scripts\setup\windows\install-world.ps1' once.
+	echo.the command 'installtime\windows\install-world.ps1' once.
 	echo.
 	exit /b 1
 )

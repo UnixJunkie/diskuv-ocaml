@@ -21,7 +21,7 @@ if (!(Test-Path -Path $DkmlPath\.dkmlroot)) {
     throw "Could not locate where this script was in the project. Thought DkmlPath was $DkmlPath"
 }
 
-$env:PSModulePath += ";$DkmlDir\setup\windows"
+$env:PSModulePath += ";$DkmlDir\installtime\windows"
 Import-Module Project
 
 function Invoke-Git {

@@ -16,7 +16,7 @@ with the *Diskuv OCaml* distribution, they are likely due to
    non-standard extensions to the C language that MSVC's CL.EXE compiler
    does not support.
 
-   > **This situation commonly presents itself as a ``syntax error`` **
+   > This situation commonly presents itself as a ``syntax error``
 
 2. UNIX vs Windows paths. UNIX paths have forward slashes while Windows paths
    have backslashes. Most Windows programs, and definitely the MSYS2 provided
@@ -26,31 +26,31 @@ with the *Diskuv OCaml* distribution, they are likely due to
      the `bash` or `dash` shell; those shells will interpret a backslash as an
      escape character.
 
-     > **This situation commonly presents itself as garbled text**, like
+     > This situation commonly presents itself as garbled text, like
      > `C:ProgramFilesMicrosoftNET`
 
    * b) Windows paths commonly have spaces in them (ex. `C:\Program Files`) while
      spaces in UNIX paths are fairly uncommon.
 
-     > **This situation commonly presents itself as an invalid argument or file not found**. For
+     > This situation commonly presents itself as an invalid argument or file not found. For
      > example `someprog --option1 C:\Program Files` would behave as if `someprog` had "option1"
      > with the value `C:Program` and `Files` was an argument.
 3. Windows does not support the same APIs that Linux supports. These APIs include but are not
    limited to POSIX and GLIBC APIs.
 
-   > **This situation commonly presents itself as ``Cannot open include file: 'xxx.h': No such file or directory`` **
+   > This situation commonly presents itself as ``Cannot open include file: 'xxx.h': No such file or directory``
 
 .. sidebar:: Why use the Microsoft toolchain at all?
 
-OCaml lives in a software ecosystem where there are few OCaml packages but many orders of magnitude
-more C packages. And although GCC-linked libraries are generally interchangable with MSVC-linked libraries,
-they are not 100% interchangable especially when it comes to shared libraries and C++ code. There is very
-little reason to have very difficult-to-diagnose problems with your programs in production or in your
-customer's hands simply because we chose to use a lesser supported compiler on Windows. We'd think
-the choices should center on when to use OCaml versus when to use C (or Rust, etc.), rather than add
-more complexity with an unusual (for Windows) compiler toolchain. We'd say somewhat similar things for why we'd want
-to compile with `clang` on macOS/iOS rather than `gcc`, although the argument for `clang` is much weaker
-because `clang` is newer than Microsoft's toolchain and Apple used to work well with `gcc`.
+    OCaml lives in a software ecosystem where there are few OCaml packages but many orders of magnitude
+    more C packages. And although GCC-linked libraries are generally interchangable with MSVC-linked libraries,
+    they are not 100% interchangable especially when it comes to shared libraries and C++ code. There is very
+    little reason to have very difficult-to-diagnose problems with your programs in production or in your
+    customer's hands simply because we chose to use a lesser supported compiler on Windows. We'd think
+    the choices should center on when to use OCaml versus when to use C (or Rust, etc.), rather than add
+    more complexity with an unusual (for Windows) compiler toolchain. We'd say somewhat similar things for why we'd want
+    to compile with `clang` on macOS/iOS rather than `gcc`, although the argument for `clang` is much weaker
+    because `clang` is newer than Microsoft's toolchain and Apple used to work well with `gcc`.
 
 *Wishlist Item*: Today it is not easy to switch toolchains within an Opam switch. It would be great if we could use
 the MSVC+MSYS2 toolchain as the default toolchain in an Opam switch, but for the rare package that requires GCC use a
@@ -348,10 +348,9 @@ We'll clean up the last two commits to look like:
     #include <caml/bigarray.h>
     #include <core_params.h>
 
-And then finish off the boilerplate instructions:
+And then we create the Opam file and patch file from the `Creating your own package patches`_ instructions:
 
 .. code-block:: shell-session
-    :linenos:
 
     [core_kernel.v0.14.2]$ git commit -a -m 'Skip unistd.h and endian.h if MSVC toolchain'
     [core_kernel.v0.14.2]$ opam install ./core_kernel.opam -v --debug-level 2
@@ -365,7 +364,15 @@ And then finish off the boilerplate instructions:
     [core_kernel.v0.14.2]$ opam show core_kernel -f opam-file > /tmp/opam
     [core_kernel.v0.14.2]$ echo 'patches: ["custom.patch"]' >> /tmp/opam
 
-You can see the final results in https://gitlab.com/diskuv/diskuv-ocaml/-/tree/main/etc/opam-repositories/diskuv-opam-repo/packages/core_kernel/core_kernel.v0.14.2
+`Creating your own package patches`_ shows where to place these ``/tmp/opam`` and ``/tmp/custom.patch``
+files, and you can see the final results in
+https://gitlab.com/diskuv/diskuv-ocaml/-/tree/main/etc/opam-repositories/diskuv-opam-repo/packages/core_kernel/core_kernel.v0.14.2
+
+The last step is to update the Opam package repository with our newly copied patches:
+
+.. code-block:: shell-session
+
+    [core_kernel.v0.14.2]$ opam update diskuv-0.1.0-prerel1
 
 Creating your own package patches
 ---------------------------------
@@ -375,7 +382,7 @@ Creating your own package patches
     in ``etc/opam-repositories/diskuv-opam-repo`` and has
     ``patches: [...]`` in its ``opam`` file. You may be able to remove
     the ``patches`` clause and then do a
-    ``opam update diskuv && opam upgrade`` before doing any of these
+    ``opam update diskuv-0.1.0-prerel1 && opam upgrade`` before doing any of these
     instructions, but that procedure has not been tested.
 
 The https://gitlab.com/diskuv/diskuv-ocaml repository has a `etc/opam-repositories/diskuv-opam-repo` folder
@@ -489,7 +496,7 @@ NINTH, update your Opam switch with your new ``diskuv-opam-repo`` patch:
 
 .. code:: bash
 
-    opam update diskuv
+    opam update diskuv-0.1.0-prerel1
 
 *See `Troubleshooting: opam update diskuv <#opam-update-diskuv>`__ if
 this fails*
@@ -509,14 +516,14 @@ Troubleshooting
 opam update diskuv
 ^^^^^^^^^^^^^^^^^^
 
-If after ``opam update diskuv`` you get:
+If after ``opam update diskuv-0.1.0-prerel1`` you get:
 
 .. code:: text
 
     [diskuv] synchronised from file://Z:/somewhere/etc/opam-repositories/diskuv-opam-repo
     [ERROR] Could not update repository "diskuv": "Z:\\somewhere\\build\\_tools\\common\\MSYS2\\usr\\bin\\patch.exe -p1 -i C:\\Users\\user\\.opam\\log\\patch-28544-5495c0" exited with code 1
 
-then rerun the command as ``opam update diskuv -vv``. That will give you
+then rerun the command as ``opam update diskuv-0.1.0-prerel1 -vv``. That will give you
 something like:
 
 .. code:: text
@@ -542,7 +549,7 @@ showing a broken package. Just remove the broken package with
     opam remove dune-configurator
     opam pin remove dune-configurator
 
-    opam update diskuv
+    opam update diskuv-0.1.0-prerel1
 
 in the example above.
 
@@ -550,13 +557,13 @@ If that still doesn't work just do:
 
 .. code:: bash
 
-    opam repository remove diskuv --all
+    opam repository remove diskuv-0.1.0-prerel1 --all
 
-    # On Windows do: .\make init-dev
+    # On Windows do: ./make init-dev
     make init-dev
 
-    opam repository priority diskuv 1 --all
-    opam update diskuv
+    opam repository priority diskuv-0.1.0-prerel1 1 --all
+    opam update diskuv-0.1.0-prerel1
 
 which will rebuild your repository.
 

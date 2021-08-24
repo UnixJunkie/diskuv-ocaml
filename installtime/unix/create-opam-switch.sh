@@ -79,9 +79,6 @@ fi
 DKMLDIR=$(dirname "$0")
 DKMLDIR=$(cd "$DKMLDIR/../.." && pwd)
 if [[ ! -e "$DKMLDIR/.dkmlroot" ]]; then echo "FATAL: Not embedded in a 'diskuv-ocaml' repository" >&2 ; exit 1; fi
-TOPDIR=$(git -C "$DKMLDIR/.." rev-parse --show-toplevel)
-TOPDIR=$(cd "$TOPDIR" && pwd)
-if [[ ! -e "$TOPDIR/dune-project" ]]; then echo "FATAL: Not embedded in a Diskuv OCaml local project" >&2 ; exit 1; fi
 
 # `diskuv-system` is the host architecture, so use `dev` as its platform
 if [[ "$DISKUV_SYSTEM_SWITCH" = ON ]]; then
@@ -96,6 +93,8 @@ else
     # shellcheck disable=SC1091
     source "$DKMLDIR"/runtime/unix/_common_tool.sh
 fi
+# shellcheck disable=SC1091
+source "$DKMLDIR"/.dkmlroot
 
 # To be portable whether we build scripts in the container or not, we
 # change the directory to always be in the TOPDIR (just like the container
@@ -188,12 +187,12 @@ OPAM_SWITCH_CREATE_OPTS=(
 # (There is an action item in etc/opam-repositories/diskuv-opam-repo/packages/ocaml-variants/ocaml-variants.4.12.0+msvc64+msys2/opam)
 if is_windows_build_machine; then
     OPAM_SWITCH_CREATE_OPTS+=(
-        --repos="diskuv,fdopen-mingw,default"
+        --repos="diskuv-$dkml_root_version,fdopen-mingw-$dkml_root_version,default"
         --packages="ocaml-variants.$OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS"
     )
 else
     OPAM_SWITCH_CREATE_OPTS+=(
-        --repos="diskuv,default"
+        --repos="diskuv-$dkml_root_version,default"
         --packages="ocaml-variants.4.12.0+options$OCAML_OPTIONS"
     )
 fi

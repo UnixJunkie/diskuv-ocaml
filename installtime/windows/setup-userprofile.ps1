@@ -247,6 +247,10 @@ $GitPath = (get-item "$GitExe").Directory.FullName
 $AvailableOpamVersion = "2.1.0.msys2.4" # needs to be a real Opam tag in https://github.com/diskuv/opam!
 $NinjaVersion = "1.10.2"
 $CMakeVersion = "3.21.1"
+# https://hub.docker.com/layers/ocaml/opam/windows-msvc-20H2-ocaml-4.12/images/sha256-e7b6e08cf22f6caed6599f801fbafbc32a93545e864b83ab42aedbd0d5835b55?context=explore
+# https://hub.docker.com/layers/ocaml/opam/windows-mingw-20H2-ocaml-4.12/images/sha256-41e095132878dd6a517408cfd47647e522da6c76a67f421931115a586131119f?context=explore
+$WindowsMsvcDockerImage = "ocaml/opam:windows-msvc-20H2-ocaml-4.12@sha256:e7b6e08cf22f6caed6599f801fbafbc32a93545e864b83ab42aedbd0d5835b55"
+$WindowsMinGWDockerImage = "ocaml/opam:windows-mingw-20H2-ocaml-4.12@sha256:41e095132878dd6a517408cfd47647e522da6c76a67f421931115a586131119f"
 $CygwinPackages = @("curl",
     "diff",
     "diffutils",
@@ -404,9 +408,10 @@ $DistributionBinaries = @(
 # Consolidate the magic constants into a single deployment id
 $CygwinHash = Get-Sha256Hex16OfText -Text ($CygwinPackagesArch -join ',')
 $MSYS2Hash = Get-Sha256Hex16OfText -Text ($MSYS2PackagesArch -join ',')
+$DockerHash = Get-Sha256Hex16OfText -Text "$WindowsMsvcDockerImage,$WindowsMinGWDockerImage"
 $PackagesHash = Get-Sha256Hex16OfText -Text ($DistributionPackages -join ',')
 $BinariesHash = Get-Sha256Hex16OfText -Text ($DistributionBinaries -join ',')
-$DeploymentId = "opam-$AvailableOpamVersion;ninja-$NinjaVersion;cmake-$CMakeVersion;cygwin-$CygwinHash;msys2-$MSYS2Hash;pkgs-$PackagesHash;bins-$BinariesHash"
+$DeploymentId = "opam-$AvailableOpamVersion;ninja-$NinjaVersion;cmake-$CMakeVersion;cygwin-$CygwinHash;msys2-$MSYS2Hash;docker-$DockerHash;pkgs-$PackagesHash;bins-$BinariesHash"
 
 # We will use the same standard established by C:\Users\<user>\AppData\Local\Programs\Microsoft VS Code
 $ProgramParentPath = "$env:LOCALAPPDATA\Programs\DiskuvOCaml"
@@ -692,7 +697,7 @@ try {
     # Download the downloader script
     Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "/opt/diskuv-ocaml/installtime/download-moby-downloader.sh '$MobyCygwinAbsPath'"
 
-    # Download the latest windows-msvc-20H2 and windows-mingw-20H2.
+    # Download the latest windows-msvc-20H2-ocaml-4.12 and windows-mingw-20H2-ocaml-4.12.
     # Q: Why 20H2? Ans:
     #    1. because it is a single kernel image so it is much smaller than multikernel `windows-msvc`
     #    2. it is the latest as of 2021-08-05 so it will be a long time before that Windows kernel is no longer built;
@@ -703,16 +708,16 @@ try {
     #
     # Skip with ... $global:SkipMobyDownload = $true ... remove it with ... Remove-Variable SkipMobyDownload
     if (!$global:SkipMobyDownload) {
-        Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "/opt/diskuv-ocaml/installtime/moby-download-docker-image.sh '$MobyCygwinAbsPath' ocaml/opam:windows-msvc-20H2 amd64"
-        Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "/opt/diskuv-ocaml/installtime/moby-download-docker-image.sh '$MobyCygwinAbsPath' ocaml/opam:windows-mingw-20H2 amd64"
+        Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "/opt/diskuv-ocaml/installtime/moby-download-docker-image.sh '$MobyCygwinAbsPath' '$WindowsMsvcDockerImage'  amd64"
+        Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "/opt/diskuv-ocaml/installtime/moby-download-docker-image.sh '$MobyCygwinAbsPath' '$WindowsMinGWDockerImage' amd64"
     }
 
     # = Extract the tarballs =
     # Note: You may be tempted to use the bundled BuildTools/ rather than ask the user to install MSBuild (see BUILDING-Windows.md).
     #       But that is dangerous because Microsoft can and likely does but hardcoded paths and system information into that directory.
     #       Definitely not worth the insane troubleshooting that would ensue.
-    Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "/opt/diskuv-ocaml/installtime/moby-extract-opam-root.sh '$MobyCygwinAbsPath' ocaml/opam:windows-msvc-20H2 amd64 msvc '$OcamlOpamRootCygwinAbsPath'"
-    Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "/opt/diskuv-ocaml/installtime/moby-extract-opam-root.sh '$MobyCygwinAbsPath' ocaml/opam:windows-mingw-20H2 amd64 mingw '$OcamlOpamRootCygwinAbsPath'"
+    Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "/opt/diskuv-ocaml/installtime/moby-extract-opam-root.sh '$MobyCygwinAbsPath' '$WindowsMsvcDockerImage' amd64 msvc '$OcamlOpamRootCygwinAbsPath'"
+    Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "/opt/diskuv-ocaml/installtime/moby-extract-opam-root.sh '$MobyCygwinAbsPath' '$WindowsMinGWDockerImage' amd64 mingw '$OcamlOpamRootCygwinAbsPath'"
 
     foreach ($portAndArch in "msvc-amd64", "mingw-amd64") {
         $AdditionalDiagnostics += "[Advanced] Cygwin commands for Docker $portAndArch image 'ocaml/opam' can be run with: $OcamlOpamRootPath\$portAndArch\cygwin64\bin\mintty.exe -`n"
@@ -887,7 +892,7 @@ try {
     # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
     if (!$global:SkipOpamSetup) {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps bash -x '$DkmlPath\setup\unix\init-opam-root.sh' dev"
+            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps bash -x '$DkmlPath\installtime\unix\init-opam-root.sh' dev"
     }
 
 
@@ -903,7 +908,7 @@ try {
     # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
     if (!$global:SkipOpamSetup) {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\setup\unix\create-diskuv-boot-DO-NOT-DELETE-switch.sh'"
+            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\create-diskuv-boot-DO-NOT-DELETE-switch.sh'"
         }
 
     # END opam switch create diskuv-boot-DO-NOT-DELETE
@@ -918,7 +923,7 @@ try {
     # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
     if (!$global:SkipOpamSetup) {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\setup\unix\create-opam-switch.sh' -s -b Release"
+            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\create-opam-switch.sh' -s -b Release"
         }
 
     # END opam switch create diskuv-system

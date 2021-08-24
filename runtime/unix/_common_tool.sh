@@ -111,7 +111,7 @@ OCAML_VARIANT_FOR_OPAM_EXE_IN_WINDOWS=4.12.0+mingw64c
 OPAM_PORT_FOR_SWITCHES_IN_WINDOWS=msvc
 #
 # Which variant we will use for all the switches in Windows except OCAML_VARIANT_FOR_OPAM_EXE_IN_WINDOWS.
-# Pick from a msys2 variant in etc/opam-repositories/diskuv-opam-repo
+# Pick from a msys2 variant in $DiskuvOCamlHome/etc/opam-repositories/diskuv-opam-repo
 # that aligns with the OPAM_PORT_FOR_SWITCHES_IN_WINDOWS.
 # shellcheck disable=SC2034
 OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS=4.12.0+msvc64+msys2
@@ -280,6 +280,21 @@ function _exec_dev_or_arch_helper () {
     fi
 }
 
+# Set the parent directory of DiskuvOCamlHome.
+#
+# Always defined, even on Unix. It is your responsibility to check if it exists.
+#
+# Outputs:
+# - env:DKMLPARENTHOME_BUILDHOST
+function set_dkmlparenthomedir () {
+    if is_windows_build_machine; then
+        DKMLPARENTHOME_BUILDHOST="$LOCALAPPDATA\\Programs\\DiskuvOCaml"
+    else
+        # shellcheck disable=SC2034
+        DKMLPARENTHOME_BUILDHOST="${XDG_DATA_HOME:-$HOME/.local/share}/diskuv-ocaml"
+    fi
+}
+
 # Detects DiskuvOCaml and sets its variables.
 #
 # If the environment variables already exist they are not overwritten.
@@ -291,6 +306,7 @@ function _exec_dev_or_arch_helper () {
 # - env:DiskuvOCamlHome - optional
 # - env:DiskuvOCamlBinaryPaths - optional
 # Outputs:
+# - env:DKMLPARENTHOME
 # - env:DiskuvOCamlVarsVersion
 # - env:DiskuvOCamlHome
 # - env:DiskuvOCamlBinaryPaths
@@ -298,15 +314,16 @@ function autodetect_dkmlvars () {
     local DiskuvOCamlVarsVersion_Override=${DiskuvOCamlVarsVersion:-}
     local DiskuvOCamlHome_Override=${DiskuvOCamlHome:-}
     local DiskuvOCamlBinaryPaths_Override=${DiskuvOCamlBinaryPaths:-}
+    set_dkmlparenthomedir
     if is_windows_build_machine; then
-        if [[ -e "$LOCALAPPDATA\\Programs\\DiskuvOCaml\\dkmlvars.sh" ]]; then
+        if [[ -e "$DKMLPARENTHOME_BUILDHOST\\dkmlvars.sh" ]]; then
             # shellcheck disable=SC1090
-            source "$LOCALAPPDATA\\Programs\\DiskuvOCaml\\dkmlvars.sh"
+            source "$DKMLPARENTHOME_BUILDHOST\\dkmlvars.sh"
         fi
     else
-        if [[ -e "${XDG_DATA_HOME:-$HOME/.local/share}/diskuv-ocaml/dkmlvars.sh" ]]; then
+        if [[ -e "$DKMLPARENTHOME_BUILDHOST/dkmlvars.sh" ]]; then
             # shellcheck disable=SC1091
-            source "${XDG_DATA_HOME:-$HOME/.local/share}/diskuv-ocaml/dkmlvars.sh"
+            source "$DKMLPARENTHOME_BUILDHOST/dkmlvars.sh"
         fi
     fi
     # Overrides
