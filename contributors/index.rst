@@ -10,9 +10,9 @@ Getting Started with Diskuv OCaml
    :caption: Table of Contents
 
    self
-   doc/AdvancedInstalls/index
-   doc/Troubleshooting
    doc/LocalProject
+   doc/Troubleshooting
+   doc/Advanced
    doc/FutureExtensions
 
 Introduction
@@ -183,15 +183,15 @@ ONE. *Download the distribution.*
 1. Open PowerShell (press the Windows key ⊞, type "PowerShell" and then Open ``Windows PowerShell``).
 2. Run the following in PowerShell to fetch the starter project from its Git repository:
 
-  .. code-block:: PowerShell
+  .. code-block:: ps1con
 
-    (Test-Path -Path ~\DiskuvOCamlProjects) -or $(ni ~\DiskuvOCamlProjects -ItemType Directory)
+    PS> (Test-Path -Path ~\DiskuvOCamlProjects) -or $(ni ~\DiskuvOCamlProjects -ItemType Directory)
 
-    iwr `
+    PS> iwr `
       "https://gitlab.com/api/v4/projects/diskuv%2Fdiskuv-ocaml/packages/generic/portable-distribution/0.1.0-prerel17/portable-distribution.zip" `
       -OutFile "$env:TEMP\diskuv-ocaml-distribution.zip"
 
-    Expand-Archive `
+    PS> Expand-Archive `
       -Path "$env:TEMP\diskuv-ocaml-distribution.zip" `
       -DestinationPath ~\DiskuvOCamlProjects `
       -Force
@@ -208,16 +208,16 @@ TWO. *Run the Install World script.*
    it is not already open.
 2. Run the following in PowerShell to run the installer script:
 
-   .. code-block:: PowerShell
+   .. code-block:: ps1con
 
-     cd ~\DiskuvOCamlProjects\diskuv-ocaml
+     PS> cd ~\DiskuvOCamlProjects\diskuv-ocaml
 
-     Set-ExecutionPolicy `
-        -ExecutionPolicy Unrestricted `
-        -Scope Process `
-        -Force
+     PS> Set-ExecutionPolicy `
+          -ExecutionPolicy Unrestricted `
+          -Scope Process `
+          -Force
 
-     installtime\windows\install-world.ps1
+     PS> installtime\windows\install-world.ps1
 
    Depending on your Windows "User Account Control" settings your machine may prompt to click "Yes"
    to install ``Visual Studio Installer`` and ``Git for Windows``; you will only be prompted if you or an
@@ -227,29 +227,49 @@ TWO. *Run the Install World script.*
    .. image:: doc/Intro-install-world.png
       :width: 600
 
-BONUS. *Open in Visual Studio Code.*
-""""""""""""""""""""""""""""""""""""
+Install is done! What next?
+"""""""""""""""""""""""""""
 
-At this point you can do the first N chapters of Real World OCaml.
+You have completed the installation of *Diskuv OCaml*. Let us try some of the things you can do right now.
 
-Go ahead and open PowerShell.
+1. Open PowerShell (press the Windows key ⊞, type "PowerShell" and then Open ``Windows PowerShell``).
+   Do not re-use an old PowerShell window since it will know nothing about the new installation you just did.
+2. Run the ``utop`` application.
 
-You can do pure OCaml coding but many OCaml programs, including your own, will need
-to install more packages and/or compile C code. We recommend you use a Diskuv OCaml
-local project to do so. Here is a starter project that does that ...
+   .. code-block:: ps1con
 
-*TODO*. This section needs to go into the "starter" project and work it through example or tutorial.
+      PS> utop
 
-.. sidebar:: Visual Studio Code is optional.
+3. You may get some harmless warnings (ex. ``failed to lock file``) that you can safely ignore. Now
+   let us try to enter some basic OCaml expressions ... be sure to
+   include the ``;;`` and then press ENTER after each line:
 
-  Using Visual Studio Code is optional but strongly recommended! The only other development environment
-  that supports OCaml well is Emacs.
+   .. code-block:: ocaml
 
-*TODO*. Be sure to include VS Code plugin. Include instructions to install VS Code (optional but strongly recommend) as well.
+      3.5 +. 6. ;;
+      30_000_000 / 300_000 ;;
+      let square x = x * x ;;
+      square 2 ;;
+      square (square 2) ;;
 
-*TODO*. Be sure to open the terminal and do a build.
+4. You probably want to do a lot more than that! You may want to edit your code in a easy-to-use editor
+   with syntax highlighting, type inspection and auto-complete
+   (an "integrated development environment" or more simply an **IDE**). You may also want to use other
+   people's code packages. Right now if you tried to use the ``Base`` package, for example, you will get
+   an ``Error: Unbound module Base`` error:
 
-Finished? It is time to create your own projects and look at the starter project.
+   .. code-block:: ocaml
+
+      open Base ;;
+
+5. Leave the ``utop`` application by typing:
+
+  .. code-block:: ocaml
+
+    #quit ;;
+
+:ref:`Local Projects`, which let you edit code in an IDE and import code packages, are
+the topic of the next section.
 
 Indices and tables
 ==================
