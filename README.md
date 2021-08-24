@@ -8,11 +8,51 @@ The preview versions 0.1.x runs on **64-bit Windows** and includes
 
    ![Installation Screenshot](https://diskuv.gitlab.io/diskuv-ocaml/_images/Intro-install-world.png)
 
-2. An upgradable runtime environment for building OCaml applications:
+2. An upgradable runtime environment for building OCaml applications with common tools like `make`, `opam` and `dune`:
 
-   *screenshot pending*
+   ```kotlin
+    [PS Z:\source\diskuv-ocaml-starter] cd ~/DiskuvOCamlProjects/diskuv-ocaml-starter
+    [PS Z:\source\diskuv-ocaml-starter] ./make build-dev
+    [PS Z:\source\diskuv-ocaml-starter] _build/default/bin/main.exe
+    > 1
+    > 2
+    > 3
+    > 94.5
+    > Total: 100.5
+    [PS Z:\source\diskuv-ocaml-starter] ./make shell-dev
+   ```
 
-3. Visual Studio Code support
+   ```lasso
+    [diskuv-ocaml-starter]$ echo You are now running a UNIX shell.
+    > You are now running a UNIX shell.
+    [diskuv-ocaml-starter]$ opam switch --short
+    > C:\Users\you\AppData\Local\Programs\DiskuvOCaml\1\system
+    > Z:\source\diskuv-ocaml-starter\build\dev\Debug
+    > Z:\source\diskuv-ocaml-starter\build\dev\Release
+    > diskuv-boot-DO-NOT-DELETE
+    [diskuv-ocaml-starter]$ dune utop
+    > ──────────┬─────────────────────────────────────────────────────────────┬──────────
+    >           │ Welcome to utop version 2.8.0 (using OCaml version 4.12.0)! │
+    >           └─────────────────────────────────────────────────────────────┘
+    >
+    > Type #utop_help for help about using utop.
+    >
+    > ─( 06:26:11 )─< command 0 >─────────────────────────────────────────{ counter: 0 }─
+   ```
+
+   ```ocaml
+    utop #> let square x = x * x ;;
+    > val square : int -> int = <fun>
+    utop #> square 2 ;;
+    > - : int = 4
+    utop #> square (square 2) ;;
+    > - : int = 16
+    utop #> #quit ;;
+   ```
+
+3. Works with the OCaml recommended Visual Studio Code plugin:
+
+   ![Screenshot of Visual Studio Code](contributors/doc/diskuv-ocaml-starter.vscode-screenshot.png)
 
 **Please visit our documentation at https://diskuv.gitlab.io/diskuv-ocaml/**
 
