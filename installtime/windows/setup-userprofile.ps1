@@ -716,8 +716,8 @@ try {
     # Note: You may be tempted to use the bundled BuildTools/ rather than ask the user to install MSBuild (see BUILDING-Windows.md).
     #       But that is dangerous because Microsoft can and likely does but hardcoded paths and system information into that directory.
     #       Definitely not worth the insane troubleshooting that would ensue.
-    Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "/opt/diskuv-ocaml/installtime/moby-extract-opam-root.sh '$MobyCygwinAbsPath' '$WindowsMsvcDockerImage' amd64 msvc '$OcamlOpamRootCygwinAbsPath'"
-    Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "/opt/diskuv-ocaml/installtime/moby-extract-opam-root.sh '$MobyCygwinAbsPath' '$WindowsMinGWDockerImage' amd64 mingw '$OcamlOpamRootCygwinAbsPath'"
+    Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "bash -x /opt/diskuv-ocaml/installtime/moby-extract-opam-root.sh '$MobyCygwinAbsPath' '$WindowsMsvcDockerImage' amd64 msvc '$OcamlOpamRootCygwinAbsPath'"
+    Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "bash -x /opt/diskuv-ocaml/installtime/moby-extract-opam-root.sh '$MobyCygwinAbsPath' '$WindowsMinGWDockerImage' amd64 mingw '$OcamlOpamRootCygwinAbsPath'"
 
     foreach ($portAndArch in "msvc-amd64", "mingw-amd64") {
         $AdditionalDiagnostics += "[Advanced] Cygwin commands for Docker $portAndArch image 'ocaml/opam' can be run with: $OcamlOpamRootPath\$portAndArch\cygwin64\bin\mintty.exe -`n"
@@ -777,7 +777,7 @@ try {
         Invoke-CygwinCommandWithProgress `
             -CygwinName "ocaml-opam/mingw-amd64" `
             -CygwinDir "$OcamlOpamRootPath\mingw-amd64\cygwin64" `
-            -Command "/opt/diskuv-ocaml/installtime/compile-native-opam.sh '$Dkml_OcamlOpamCygwinAbsPath' $AvailableOpamVersion '$OpamBootstrap_OcamlOpamCygwinAbsPath' '$ProgramToolOpam_OcamlOpamCygwinAbsPath'"
+            -Command "env TOPDIR=/opt/diskuv-ocaml/installtime/apps /opt/diskuv-ocaml/installtime/compile-native-opam.sh '$Dkml_OcamlOpamCygwinAbsPath' $AvailableOpamVersion '$OpamBootstrap_OcamlOpamCygwinAbsPath' '$ProgramToolOpam_OcamlOpamCygwinAbsPath'"
 
         # Install it in the final location. Do a tiny safety check and only install from a whitelist of file extensions.
         Write-Progress -Activity "$DeploymentMark $ProgressActivity" -Status "Installing opam.exe"
@@ -965,6 +965,7 @@ try {
 
     if (!(Test-Path -Path $AppsBinDir)) { New-Item -Path $AppsBinDir -ItemType Directory | Out-Null }
     Copy-Item "$AppsCachePath\default\fswatch_on_inotifywin\fswatch.exe" -Destination $AppsBinDir
+    Copy-Item "$AppsCachePath\default\findup\findup.exe" -Destination $AppsBinDir\dkml-findup.exe
 
     # END compile apps
     # ----------------------------------------------------------------

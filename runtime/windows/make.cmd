@@ -50,6 +50,31 @@ REM
 REM * Any variables we define here will appear inside the Makefile.
 REM ==» Use DKMAKE_INTERNAL_ as prefix for all variables.
 
+REM Find .dkmlroot in an ancestor of the current scripts' directory
+FOR /F "tokens=* usebackq" %%F IN (`"%DiskuvOCamlHome%\tools\apps\dkml-findup.exe",-f,%~dp0,.dkmlroot`) DO (
+SET "DKMAKE_DKMLDIR=%%F"
+)
+if not exist "%DKMAKE_DKMLDIR%\.dkmlroot" (
+	echo.
+	echo.The '.dkmlroot' file was not found. Make sure you have run
+	echo.the script 'installtime\windows\install-world.ps1' once.
+	echo.
+	exit /b 1
+)
+
+REM Find dune-project in an ancestor of DKMLROOT so we know where the Makefile is
+FOR /F "tokens=* usebackq" %%F IN (`"%DiskuvOCamlHome%\tools\apps\dkml-findup.exe",-f,%DKMAKE_DKMLDIR%\..,dune-project`) DO (
+SET "DKMAKE_TOPDIR=%%F"
+)
+if not exist "%DKMAKE_TOPDIR%\dune-project" (
+	echo.
+	echo.The 'dune-project' file was not found. Make sure you are running
+	echo.this %~dp0\make.cmd script as a subdirectory / git submodule of
+	echo.your local project.
+	echo.
+	exit /b 1
+)
+
 REM Find cygpath so we can convert Windows paths to Unix/Cygwin paths
 if not defined DKMAKE_INTERNAL_CYGPATH (
 	set "DKMAKE_INTERNAL_CYGPATH=%DiskuvOCamlHome%\tools\MSYS2\usr\bin\cygpath.exe"
@@ -65,13 +90,13 @@ if %ERRORLEVEL% neq 0 (
 )
 
 REM Set DKMAKE_INTERNAL_DISKUVOCAMLHOME to something like /c/Users/user/AppData/Local/Programs/DiskuvOCaml/1/
-FOR /F "tokens=* USEBACKQ" %%F IN (`%%DKMAKE_INTERNAL_CYGPATH%% -au "%DiskuvOCamlHome%"`) DO (
+FOR /F "tokens=* usebackq" %%F IN (`%%DKMAKE_INTERNAL_CYGPATH%% -au "%DiskuvOCamlHome%"`) DO (
 SET "DKMAKE_INTERNAL_DISKUVOCAMLHOME=%%F"
 )
 SET DKMAKE_INTERNAL_DISKUVOCAMLHOME=%DKMAKE_INTERNAL_DISKUVOCAMLHOME:"=%
 
 REM Find Powershell so we can add its directory to the PATH
-FOR /F "tokens=* USEBACKQ" %%F IN (`where.exe powershell.exe`) DO (
+FOR /F "tokens=* usebackq" %%F IN (`where.exe powershell.exe`) DO (
 SET "DKMAKE_INTERNAL_POWERSHELLEXE=%%F"
 )
 
@@ -85,7 +110,7 @@ if %ERRORLEVEL% neq 0 (
 )
 
 REM Find Git so we can add its directory to the PATH
-FOR /F "tokens=* USEBACKQ" %%F IN (`where.exe git.exe`) DO (
+FOR /F "tokens=* usebackq" %%F IN (`where.exe git.exe`) DO (
 SET "DKMAKE_INTERNAL_GITEXE=%%F"
 )
 
@@ -99,19 +124,19 @@ if %ERRORLEVEL% neq 0 (
 )
 
 REM Set DKMAKE_INTERNAL_WINPATH to something like /c/WINDOWS/System32:/c/WINDOWS:/c/WINDOWS/System32/Wbem
-FOR /F "tokens=* USEBACKQ" %%F IN (`%%DKMAKE_INTERNAL_CYGPATH%% --path "%SYSTEMROOT%\System32;%SYSTEMROOT%;%SYSTEMROOT%\System32\Wbem"`) DO (
+FOR /F "tokens=* usebackq" %%F IN (`%%DKMAKE_INTERNAL_CYGPATH%% --path "%SYSTEMROOT%\System32;%SYSTEMROOT%;%SYSTEMROOT%\System32\Wbem"`) DO (
 SET "DKMAKE_INTERNAL_WINPATH=%%F"
 )
 SET DKMAKE_INTERNAL_WINPATH=%DKMAKE_INTERNAL_WINPATH:"=%
 
 REM Set DKMAKE_INTERNAL_POWERSHELLPATH to something like /c/WINDOWS/System32/WindowsPowerShell/v1.0/
-FOR /F "tokens=* USEBACKQ" %%F IN (`%%DKMAKE_INTERNAL_CYGPATH%% -au "%DKMAKE_INTERNAL_POWERSHELLEXE%\.."`) DO (
+FOR /F "tokens=* usebackq" %%F IN (`%%DKMAKE_INTERNAL_CYGPATH%% -au "%DKMAKE_INTERNAL_POWERSHELLEXE%\.."`) DO (
 SET "DKMAKE_INTERNAL_POWERSHELLPATH=%%F"
 )
 SET DKMAKE_INTERNAL_POWERSHELLPATH=%DKMAKE_INTERNAL_POWERSHELLPATH:"=%
 
 REM Set DKMAKE_INTERNAL_GITPATH to something like /c/Program Files/Git/cmd/
-FOR /F "tokens=* USEBACKQ" %%F IN (`%%DKMAKE_INTERNAL_CYGPATH%% -au "%DKMAKE_INTERNAL_GITEXE%\.."`) DO (
+FOR /F "tokens=* usebackq" %%F IN (`%%DKMAKE_INTERNAL_CYGPATH%% -au "%DKMAKE_INTERNAL_GITEXE%\.."`) DO (
 SET "DKMAKE_INTERNAL_GITPATH=%%F"
 )
 SET DKMAKE_INTERNAL_GITPATH=%DKMAKE_INTERNAL_GITPATH:"=%
@@ -145,7 +170,7 @@ set DKMAKE_INTERNAL_POWERSHELLPATH=
 set DKMAKE_INTERNAL_GITEXE=
 set DKMAKE_INTERNAL_GITPATH=
 
-%DKMAKE_INTERNAL_MAKE% "DKMAKE_CALLING_DIR=%DKMAKE_CALLING_DIR%" %*
+%DKMAKE_INTERNAL_MAKE% -f "%DKMAKE_TOPDIR%\Makefile" "DKMAKE_CALLING_DIR=%DKMAKE_CALLING_DIR%" %*
 goto end
 
 :end

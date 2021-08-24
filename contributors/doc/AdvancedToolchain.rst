@@ -40,7 +40,9 @@ with the *Diskuv OCaml* distribution, they are likely due to
 
    > This situation commonly presents itself as ``Cannot open include file: 'xxx.h': No such file or directory``
 
-.. sidebar:: Why use the Microsoft toolchain at all?
+.. note::
+
+    **Why use the Microsoft toolchain at all?**
 
     OCaml lives in a software ecosystem where there are few OCaml packages but many orders of magnitude
     more C packages. And although GCC-linked libraries are generally interchangable with MSVC-linked libraries,
@@ -51,10 +53,6 @@ with the *Diskuv OCaml* distribution, they are likely due to
     more complexity with an unusual (for Windows) compiler toolchain. We'd say somewhat similar things for why we'd want
     to compile with `clang` on macOS/iOS rather than `gcc`, although the argument for `clang` is much weaker
     because `clang` is newer than Microsoft's toolchain and Apple used to work well with `gcc`.
-
-*Wishlist Item*: Today it is not easy to switch toolchains within an Opam switch. It would be great if we could use
-the MSVC+MSYS2 toolchain as the default toolchain in an Opam switch, but for the rare package that requires GCC use a
-MinGW+MSYS2 toolchain.
 
 Real example of resolving toolchain problems
 --------------------------------------------

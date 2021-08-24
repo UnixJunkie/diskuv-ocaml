@@ -160,7 +160,7 @@ $(foreach platform,dev $(DKML_PLATFORMS),$(eval $(call SHELL_platform_template,$
 define SHELL_platform_buildtype_template =
 .PHONY: shell-$(1)-$(2)
 shell-$(1)-$(2):
-	@if [ ! "$(DKML_BUILD_TRACE)" = OFF ]; then set -x; fi ; DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKMAKE_CALLING_DIR='$(DKMAKE_CALLING_DIR)' $(DKML_DIR)/runtime/unix/shell.sh '$(1)' '$(2)' || true
+	@if [ ! "$(DKML_BUILD_TRACE)" = OFF ]; then set -x; fi ; DKML_BUILD_TRACE='$(DKML_BUILD_TRACE)' DKMAKE_CALLING_DIR='$(DKMAKE_CALLING_DIR)' '$(DKML_DIR)/runtime/unix/shell.sh' '$(1)' '$(2)' || true
 	@exit 0
 endef
 $(foreach platform,dev $(DKML_PLATFORMS),$(foreach buildtype,$(DKML_BUILDTYPES), \

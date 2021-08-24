@@ -32,6 +32,21 @@ This is easiest to see with an example.
 
 You now have a local project in ``~\DiskuvOCamlProjects\diskuv-ocaml-starter``!
 
+.. warning::
+
+    **Spaces in your project directory**
+
+    A central part of a local project is the file ``Makefile``. There has been a
+    `twenty year bug <http://savannah.gnu.org/bugs/?712>`_ open for
+    getting GNU Make - the tool that runs the commands in ``Makefile`` - to work
+    when there are spaces in directories and filenames. Please don't wait for it
+    to be fixed. **Place your local projects in a directory without
+    any spaces**. If your Powershell window is showing a space
+    like in ``C:\Users\Jane‿Smith\DiskuvOCamlProjects`` then
+    use ``C:\DiskuvOCamlProjects`` instead of ``~\DiskuvOCamlProjects``
+    throughout the rest of this documentation. You may need to ask your Administrator
+    if you are on a shared PC.
+
 We can compile the source code by running the ``build-dev`` target:
 
 .. code-block:: ps1con
