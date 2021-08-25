@@ -75,21 +75,23 @@ About Diskuv OCaml
 *Diskuv OCaml* is an OCaml distribution focused on a) secure, cross-platform software development and b) ease of use
 for language learners and professional developers.
 
-Diskuv, a company that is creating safe communications solutions, adopted the OCaml language because OCaml is the thought
-leader in formally verified software (a fancy term for proving that software is secure) and because OCaml can be very
-portable due to its close ties to the C language. However, OCaml development used to require a lot of tribal knowledge.
-For example the popular `Unison File Sychronizer <https://github.com/bcpierce00/unison#unison-file-synchronizer>`_ that can
+Diskuv, a company creating safe communications solutions, adopted the OCaml language because OCaml is the thought
+leader for formally verified software (a fancy term for proving that software is secure) while being
+portable due to compatibility with the C language. However, OCaml development used to require a lot of tribal knowledge.
+For example the `Unison File Sychronizer <https://github.com/bcpierce00/unison#unison-file-synchronizer>`_ which can
 synchronize folders between different operating systems (pretty cool!) was developed in OCaml and has been available on
-macOS, Linux and Windows for decades, yet even as of today OCaml has no official support for Windows. The online book
-`Real World OCaml <https://dev.realworldocaml.org/index.html/>`_ solved much of the tribal knowledge problem but even
-in 2021 you will likely going to run into some roadblocks. Several companies and groups have filled the void
-(Jane Street, OCaml Labs, OCaml Pro, Facebook among others). *Diskuv OCaml* was released in August 2021 to coincide
-with the `deprecation of the tremendously helpful but unofficial <https://fdopen.github.io/opam-repository-mingw/2021/02/26/repo-discontinued/>`_
-port of OCaml to Windows; it provides a few critical functions:
+macOS, Linux and Windows for decades. Yet the
+`defacto Windows distribution of OCaml <https://fdopen.github.io/opam-repository-mingw/2021/02/26/repo-discontinued/>`_
+was deprecated in 2021! The online book
+`Real World OCaml <https://dev.realworldocaml.org/index.html/>`_ solved much of the tribal knowledge problem but you will
+likely run into some roadblocks. Several companies and groups have filled the void
+(Jane Street, OCaml Labs, OCaml Pro and Facebook among others). *Diskuv OCaml* provides a few critical functions:
 
 1. A way to install a coherent set of software that has been vetted to work together. Especially but not only on Windows.
 2. A way to upgrade that software, usually in response to security patches or critical bug fixes.
 3. A support channel when things go wrong.
+
+.. note::
 
   The first releases (0.1.x) of Diskuv OCaml support Windows 64-bit systems only, and should be
   considered preview releases.
@@ -161,7 +163,7 @@ How to Install
 
 .. note::
 
-   These instructions are for Windows developers.
+   These instructions are currently only for Windows developers.
 
 Requirements
 ~~~~~~~~~~~~

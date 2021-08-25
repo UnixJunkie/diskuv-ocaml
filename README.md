@@ -2,13 +2,15 @@
 
 *Diskuv OCaml* is an OCaml distribution focused on a) secure, cross-platform software development and b) ease of use for language learners and professional developers.
 
-The preview versions 0.1.x runs on **64-bit Windows** and includes
+**Documentation is available at https://diskuv.gitlab.io/diskuv-ocaml/**
 
-1. An installer for the initial multi-hour Windows compilation process, including the installation of Git and Visual Studio Build Tools if needed:
+The preview versions 0.1.x run on **64-bit Windows** and:
+
+1. Includes an installer for the initial multi-hour Windows compilation process, including the installation of Git and Visual Studio Build Tools if needed:
 
    ![Installation Screenshot](https://diskuv.gitlab.io/diskuv-ocaml/_images/Intro-install-world.png)
 
-2. An upgradable runtime environment for building OCaml applications with common tools like `make`, `opam` and `dune`:
+2. Includes a UNIX-compatible runtime environment for building OCaml applications with common tools like `make`, `opam` and `dune`:
 
    ```kotlin
     [PS Z:\source\diskuv-ocaml-starter] cd ~/DiskuvOCamlProjects/diskuv-ocaml-starter
@@ -56,6 +58,8 @@ The preview versions 0.1.x runs on **64-bit Windows** and includes
 
 **Please visit our documentation at https://diskuv.gitlab.io/diskuv-ocaml/**
 
+![Twitter Follow](https://img.shields.io/twitter/follow/diskuv?style=social)
+
 ## Licensing
 
 As a developer there is:
@@ -65,14 +69,18 @@ As a developer there is:
   depend on which Opam packages you choose to include in your
   final product. Read our [documentation](https://diskuv.gitlab.io/diskuv-ocaml/#about-ocaml) for the best way to explore those packages.
 
-> Are you an OCaml package maintainer? Any patches we introduce will be released back to you under your existing license. If your project does not
-> have an explicit license then Diskuv will release the patches under the Apache v2.0 license.
+> Are you an OCaml package maintainer?
+> * Any patches we introduce will be released back to you under your existing license. If your project does not
+>   have an explicit license then Diskuv will release the patches under the Apache v2.0 license.
+> * In an upcoming release we will distribute a [OSL 3.0](https://opensource.org/licenses/OSL-3.0)
+>   open source distribution so you can git submodule the *Diskuv OCaml* distribution. Among other things that will
+>   let your Windows users auto-install OCaml and build your library/application without coming to this website.
 
 License questions can be directed to support@diskuv.com.
 
 ## Acknowledgements
 
-The *Diskuv OCaml* distribution would not be possible without many people's efforts.
+The *Diskuv OCaml* distribution would not be possible without many people's efforts!
 
 In alphabetical order some of the critical pieces were provided by:
 
