@@ -98,8 +98,7 @@ if [[ "$PRERELEASE" = OFF ]]; then
 fi
 
 # Push
-git push
-git push --tags
+git push --atomic origin main "$NEW_VERSION" # git push && git push --tags
 
 # Set GitLab options
 CI_SERVER_URL=https://gitlab.com
