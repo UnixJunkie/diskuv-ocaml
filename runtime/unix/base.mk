@@ -191,7 +191,7 @@ buildconfig/dune: buildconfig/dune/dune.env.workspace.inc buildconfig/dune/dune.
 
 .PHONY: init-dev
 init-dev: buildconfig/dune
-	@if [ ! "$(DKML_BUILD_TRACE)" = OFF ]; then set -x; fi ; DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) $(DKML_DIR)/runtime/unix/build-sandbox-init.sh dev
+	@if [ ! "$(DKML_BUILD_TRACE)" = OFF ]; then set -x; fi ; DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) '$(DKML_DIR)/runtime/unix/build-sandbox-init.sh' dev
 
 .PHONY: prepare-dev
 prepare-dev: prepare-dev-$(BUILDTYPE_DEFAULT)
@@ -200,9 +200,9 @@ define PREPARE_buildtype_template =
   .PHONY: prepare-dev-$(1)
   prepare-dev-$(1): init-dev
 	@if [ "$$MSYSTEM" = MSYS ] || [ -e /usr/bin/cygpath ]; then \
-		if [ ! "$(DKML_BUILD_TRACE)" = OFF ]; then set -x; fi ; DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) $(DKML_DIR)/runtime/unix/build-sandbox-configure.sh dev $(1) $(OPAMS_CSV_WINDOWS); \
+		if [ ! "$(DKML_BUILD_TRACE)" = OFF ]; then set -x; fi ; DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' dev $(1) $(OPAMS_CSV_WINDOWS); \
 	else \
-		if [ ! "$(DKML_BUILD_TRACE)" = OFF ]; then set -x; fi ; DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) $(DKML_DIR)/runtime/unix/build-sandbox-configure.sh dev $(1) $(OPAMS_CSV_LINUX); \
+		if [ ! "$(DKML_BUILD_TRACE)" = OFF ]; then set -x; fi ; DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) '$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' dev $(1) $(OPAMS_CSV_LINUX); \
 	fi
 
   .PHONY: prepare-all-$(1)
@@ -213,8 +213,8 @@ $(foreach buildtype,$(DKML_BUILDTYPES),$(eval $(call PREPARE_buildtype_template,
 define PREPARE_platform_template =
   .PHONY: init-$(1)
   init-$(1):
-	$(DKML_DIR)/runtime/unix/prepare-docker-alpine-arch.sh $(1) "$(KERNEL_$(1))" "$(ALPINE_ARCH_$(1))"
-	$(DKML_DIR)/runtime/unix/build-sandbox-init.sh $(1)
+	'$(DKML_DIR)/runtime/unix/prepare-docker-alpine-arch.sh' $(1) "$(KERNEL_$(1))" "$(ALPINE_ARCH_$(1))"
+	'$(DKML_DIR)/runtime/unix/build-sandbox-init.sh' $(1)
 
   .PHONY: prepare-$(1)
   prepare-$(1): prepare-$(1)-$(BUILDTYPE_DEFAULT)
@@ -224,7 +224,7 @@ $(foreach platform,$(DKML_PLATFORMS),$(eval $(call PREPARE_platform_template,$(p
 define PREPARE_platform_buildtype_template =
   .PHONY: prepare-$(1)-$(2)
   prepare-$(1)-$(2): init-$(1)
-	$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh $(1) $(2) $(LINUX_OPAMS_CSV);
+	'$(DKML_DIR)/runtime/unix/build-sandbox-configure.sh' $(1) $(2) $(LINUX_OPAMS_CSV);
 endef
 $(foreach platform,$(DKML_PLATFORMS),$(foreach buildtype,$(DKML_BUILDTYPES), \
     $(eval $(call PREPARE_platform_buildtype_template,$(platform),$(buildtype))) \
@@ -340,9 +340,9 @@ define BUILD_platform_buildtype_template =
   .PHONY: build-$(1)-$(2) quickbuild-$(1)-$(2) test-$(1)-$(2)
   quickbuild-$(1)-$(2):
 	@if [ "$$MSYSTEM" = MSYS ] || [ -e /usr/bin/cygpath ]; then \
-		if [ ! "$(DKML_BUILD_TRACE)" = OFF ]; then set -x; fi ; DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) $(DKML_DIR)/runtime/unix/platform-dune-exec -p $(1) -b $(2) build $(DUNETARGET_BUILD_WINDOWS); \
+		if [ ! "$(DKML_BUILD_TRACE)" = OFF ]; then set -x; fi ; DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_BUILD_WINDOWS); \
 	else \
-		if [ ! "$(DKML_BUILD_TRACE)" = OFF ]; then set -x; fi ; DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) $(DKML_DIR)/runtime/unix/platform-dune-exec -p $(1) -b $(2) build $(DUNETARGET_BUILD_LINUX); \
+		if [ ! "$(DKML_BUILD_TRACE)" = OFF ]; then set -x; fi ; DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_BUILD_LINUX); \
 	fi
   build-$(1)-$(2): prepare-$(1)-$(2) quickbuild-$(1)-$(2)
   test-$(1)-$(2):
@@ -352,12 +352,12 @@ define BUILD_platform_buildtype_template =
 		printf "$(HORIZONTAL_RULE_80COLS)\n\n"; \
 		if [ "$$MSYSTEM" = MSYS ] || [ -e /usr/bin/cygpath ]; then \
 			if [ ! "$(DKML_BUILD_TRACE)" = OFF ]; then set -x; fi ; \
-			DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) $(DKML_DIR)/runtime/unix/platform-dune-exec -p $(1) -b $(2) build $(DUNETARGET_TEST_WINDOWS); \
-			DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) $(DKML_DIR)/runtime/unix/platform-dune-exec -p $(1) -b $(2) runtest $(DUNETARGET_TEST_WINDOWS) && echo TESTS PASSED && echo; \
+			DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_TEST_WINDOWS); \
+			DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) runtest $(DUNETARGET_TEST_WINDOWS) && echo TESTS PASSED && echo; \
 		else \
 			if [ ! "$(DKML_BUILD_TRACE)" = OFF ]; then set -x; fi ; \
-			DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) $(DKML_DIR)/runtime/unix/platform-dune-exec -p $(1) -b $(2) build $(DUNETARGET_TEST_LINUX); \
-			DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) $(DKML_DIR)/runtime/unix/platform-dune-exec -p $(1) -b $(2) runtest $(DUNETARGET_TEST_LINUX) && echo TESTS PASSED && echo; \
+			DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) build $(DUNETARGET_TEST_LINUX); \
+			DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(1) -b $(2) runtest $(DUNETARGET_TEST_LINUX) && echo TESTS PASSED && echo; \
 		fi; \
 	fi
 endef
@@ -379,7 +379,7 @@ define UPDATE_template =
   .PHONY: update-$(1)
   update-$(1): prepare-$(1)
 	$(foreach buildtype,$(DKML_BUILDTYPES),
-		$(DKML_DIR)/runtime/unix/within-sandbox -p $(platform) -b $(buildtype) opam update;
+		'$(DKML_DIR)/runtime/unix/within-sandbox' -p $(platform) -b $(buildtype) opam update;
 	)
 endef
 $(foreach platform,$(DKML_PLATFORMS),$(eval $(call UPDATE_template,$(platform))))
@@ -392,7 +392,7 @@ update-all: $(foreach platform,$(DKML_PLATFORMS),update-$(platform))
 .PHONY: upgrade-dev
 upgrade-dev: prepare-dev
 	$(foreach buildtype,$(DKML_BUILDTYPES),
-		$(DKML_DIR)/runtime/unix/within-dev -b $(buildtype) opam upgrade;
+		'$(DKML_DIR)/runtime/unix/within-dev' -b $(buildtype) opam upgrade;
 	)
 
 # upgrade-windows_x86_64, etc. defined and used as a template so `make -j` target parallelization works well
@@ -400,7 +400,7 @@ define UPGRADE_template =
   .PHONY: upgrade-$(1)
   upgrade-$(1): prepare-$(1)
 	$(foreach buildtype,$(DKML_BUILDTYPES),
-		$(DKML_DIR)/runtime/unix/within-sandbox -p $(platform) -b $(buildtype) opam upgrade;
+		'$(DKML_DIR)/runtime/unix/within-sandbox' -p $(platform) -b $(buildtype) opam upgrade;
 	)
 endef
 $(foreach platform,$(DKML_PLATFORMS),$(eval $(call UPGRADE_template,$(platform))))
@@ -424,9 +424,9 @@ upgrade-all: $(foreach platform,$(DKML_PLATFORMS),upgrade-$(platform))
 #
 # You can add more by adding to the $(foreach option,flag1 flag2 flag3, ....) clause
 # NIT: Do not copy this recipe! Instead copy the more correct `buildconfig/dune/dune.env.executable` recipe (it has proper dependency triggers, and doesn't generate temporary files and 'cmp -s' checks when not needed)
-buildconfig/dune/dune.env.workspace.inc: $(DKML_DIR)/etc/dune/dune.env.workspace.inc.in Makefile
+buildconfig/dune/dune.env.workspace.inc: $(DKML_DIR)/etc/dune/dune.env.workspace.inc.in
 	@install -d buildconfig/dune/workspace
-	@cp $< $@.tmp
+	@cp '$<' $@.tmp
 	@echo '(env' >> $@.tmp
 	@$(foreach platform,dev $(DKML_PLATFORMS),$(foreach buildtype,$(DKML_BUILDTYPES), \
 		echo '  ($(platform)-$(buildtype)' >> $@.tmp; \
@@ -528,15 +528,15 @@ dkml-report: buildconfig/dune
 				echo "$(HORIZONTAL_RULE_80COLS)"; \
 				echo; \
 				if [ "$(platform)" = dev ]; then \
-				  within="$(DKML_DIR)/runtime/unix/within-dev -b $(buildtype)"; \
+				  within="'$(DKML_DIR)/runtime/unix/within-dev' -b $(buildtype)"; \
 				else \
-				  within="$(DKML_DIR)/runtime/unix/within-sandbox -p $(platform) -b $(buildtype)"; \
+				  within="'$(DKML_DIR)/runtime/unix/within-sandbox' -p $(platform) -b $(buildtype)"; \
 				fi; \
 				DKML_BUILD_TRACE=OFF $$within uname -a || true; \
 				echo; \
-				DKML_BUILD_TRACE=OFF $(DKML_DIR)/runtime/unix/platform-opam-exec -p $(platform) -b $(buildtype) config report || true; \
+				DKML_BUILD_TRACE=OFF '$(DKML_DIR)/runtime/unix/platform-opam-exec' -p $(platform) -b $(buildtype) config report || true; \
 				echo; \
-				DKML_BUILD_TRACE=OFF $(DKML_DIR)/runtime/unix/platform-dune-exec -p $(platform) -b $(buildtype) printenv --display=quiet || true; \
+				DKML_BUILD_TRACE=OFF '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p $(platform) -b $(buildtype) printenv --display=quiet || true; \
 			fi; \
 	))
 
@@ -544,7 +544,7 @@ dkml-report: buildconfig/dune
 .PHONY: dkml-devmode
 dkml-devmode: quickbuild-dev-Debug
 	while true; do \
-		DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) $(DKML_DIR)/runtime/unix/platform-dune-exec -p dev -b Debug \
+		DKML_BUILD_TRACE=$(DKML_BUILD_TRACE) '$(DKML_DIR)/runtime/unix/platform-dune-exec' -p dev -b Debug \
 			build --watch --terminal-persistence=clear-on-rebuild \
 			$(if $(DKML_NONEMPTY_IF_BUILD_HOST_IS_WINDOWS),$(DUNETARGET_TEST_WINDOWS),$(DUNETARGET_TEST_LINUX)); \
 		sleep 5 || exit 0; \
