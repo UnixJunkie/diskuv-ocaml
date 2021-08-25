@@ -159,7 +159,7 @@ publish-github-docs: publish-prepare-docs
 publish-gitlab-docs: publish-prepare-docs
 	@git rev-parse gitlab-pages >/dev/null 2>&1 || git branch gitlab-pages origin/gitlab-pages
 	@$(CMAKE) -E echo Trying to open a web browser so you can review the final result ...
-	@$(CMAKE) -E echo "Once you are finished the review, use 'git switch gitlab-pages && git merge main && git push && git switch main' to publish the changes"
+	@$(CMAKE) -E echo "Once you are finished the review, use 'git switch gitlab-pages && git merge --ff-only main && git push && git switch main' to publish the changes"
 	@wslview _build/html/index.html || open _build/html/index.html || explorer '_build\html\index.html' || \
 		$(CMAKE) -E echo "Cannot find a browser. Please review the web site at _build/html/index.html"
 
