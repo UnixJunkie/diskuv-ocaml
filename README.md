@@ -69,3 +69,16 @@ As a developer there is:
 > have an explicit license then Diskuv will release the patches under the Apache v2.0 license.
 
 License questions can be directed to support@diskuv.com.
+
+## Acknowledgements
+
+The *Diskuv OCaml* distribution would not be possible without many people's efforts.
+
+In alphabetical order some of the critical pieces were provided by:
+
+* Andreas Hauptmann (fdopen@) - Maintained the defacto Windows ports of OCaml for who knows how long
+* INRIA for creating and maintaining OCaml
+* Jane Street and the contributors to `dune`
+* OCaml Labs and the contributors for the Visual Studio Code extension for OCaml
+* OCamlPro, Jane Street and the contributors to `opam`
+* Yaron Minsky, Anil Madhavapeddy and Jason Hickey for the book "Real World OCaml"
