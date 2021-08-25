@@ -86,8 +86,8 @@ typing Ctrl-C or Enter + Ctrl-Z:
 Recap: You fetched a Local Project, built its code and all of its dependencies, and then ran
 the resulting application!
 
-In your own projects you will likely be making edits, and then building and repeating those
-two steps over and over again. Since you already did ``build-dev`` once, use the
+In your own projects you will likely be making edits, and then building, and then repeating
+the edit and build steps over and over again. Since you already did ``build-dev`` once, use the
 following to "quickly" build your Local Project:
 
 .. code-block:: ps1con
@@ -130,7 +130,6 @@ Once you have Visual Studio Code, you will want the OCaml plugin.
 Open a *new* PowerShell session and type:
 
 .. code-block:: ps1con
-    :linenos:
     :emphasize-lines: 5,8
 
     PS1> iwr `
@@ -176,11 +175,12 @@ Now you need to quit **ALL** Visual Studio Code windows (if any), and then resta
 but a new version of the plugin has yet to be released.  Until it is released,
 we have given you a pre-release version.*
 
-Visual Studio Development
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Visual Studio Code Development
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1. Open the folder (File > Open Folder; or Ctrl+K Ctrl+O) ``%USERPROFILE%\DiskuvOCamlProjects\diskuv-ocaml-starter``
-2. Open a Terminal (Terminal > New Terminal; or Ctrl+Shift+`). In the terminal type:
+1. Launch Visual Studio Code
+2. Open the folder (File > Open Folder; or Ctrl+K Ctrl+O) ``%USERPROFILE%\DiskuvOCamlProjects\diskuv-ocaml-starter``
+3. Open a Terminal (Terminal > New Terminal; or Ctrl+Shift+`). In the terminal type:
 
    .. code-block:: ps1con
 
@@ -210,7 +210,7 @@ Visual Studio Development
    its change detection and compile times should be almost instantaneous for most
    projects.
 
-3. Open another Terminal. In this terminal you can quickly test some pieces of your code.
+4. Open another Terminal. In this terminal you can quickly test some pieces of your code.
    To test ``lib/dune`` and ``lib/terminal_color.ml`` which come directly from the
    `Real World OCaml book <https://dev.realworldocaml.org/variants.html>`_ you would type:
 
@@ -256,9 +256,9 @@ Visual Studio Development
         > Hello Blue World!
         > - : unit = ()
         utop #> #quit;;
-4. Open the source code ``bin/main.ml`` and ``lib/terminal_color.ml`` in the editor.
+5. Open the source code ``bin/main.ml`` and ``lib/terminal_color.ml`` in the editor.
    When you hover over the text you should see type information popup.
-5. Change the indentation of ``bin/main.ml`` and ``lib/terminal_color.ml``. Then
+6. Change the indentation of ``bin/main.ml`` and ``lib/terminal_color.ml``. Then
    press Shift + Alt + F (or go to View > Command Palette and type "Format Document").
    You should see your code reformatted.
 

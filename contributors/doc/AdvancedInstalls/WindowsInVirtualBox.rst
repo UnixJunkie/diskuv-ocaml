@@ -42,4 +42,7 @@ Windows 10 on macOS/Linux with VirtualBox
     .. image:: virtualbox2.png
         :width: 400
 
+5. (Optional) To enable copy and pasting from/to your Windows virtual machine, click on the ``Settings`` button and go
+   to General > Advanced. Change the ``Shared Clipboard`` to ``Bidirectional``.
+
 After starting the virtual machine, you can complete the :ref:`How to Install` instructions.
