@@ -61,11 +61,14 @@ if which pacman >/dev/null 2>&1 && which cygpath >/dev/null 2>&1; then HOME="$US
 cd "$DKMLDIR"
 
 # Capture which version will be the release version when the prereleases are finished
-TARGET_VERSION=$(awk '$1=="current_version"{print $NF; exit 0}' .bumpversion.cfg | sed 's/[-+].*//')
+TARGET_VERSION=$(awk '$1=="current_version"{print $NF; exit 0}' .bumpversion.prerelease.cfg | sed 's/[-+].*//')
 
 if [[ "$PRERELEASE" = ON ]]; then
     # Increment the prerelease
-    bump2version prerelease --message 'Prerelease v{new_version}' --verbose
+    bump2version prerelease \
+        --config-file .bumpversion.prerelease.cfg \
+        --message 'Prerelease v{new_version}' \
+        --verbose
 else
     # We are doing a target release, not a prerelease ...
 
@@ -84,16 +87,24 @@ else
     git add CHANGES.md "contributors/changes/v$TARGET_VERSION.md"
 
     # 3. Make a release commit
-	git commit -m "Prepare release $TARGET_VERSION"
+	git commit -m "Finish v$TARGET_VERSION release (1 of 2)"
 
-    # Increment the change which will clear the prerelease state
-	bump2version change --message 'Finish v{new_major}.{new_minor}.{new_patch} release' --tag-name 'v{new_major}.{new_minor}.{new_patch}' --verbose
+    # Increment the change which will clear the _prerelease_ state
+	bump2version change \
+        --config-file .bumpversion.prerelease.cfg \
+        --new-version "$TARGET_VERSION" \
+        --message 'Finish v{new_version} release (2 of 2)' \
+        --tag-name 'v{new_version}' \
+        --verbose
 fi
 
 # Safety check version for a release
-NEW_VERSION=$(awk '$1=="current_version"{print $NF; exit 0}' .bumpversion.cfg)
+NEW_VERSION=$(awk '$1=="current_version"{print $NF; exit 0}' .bumpversion.prerelease.cfg)
 if [[ "$PRERELEASE" = OFF ]]; then
-    if [[ ! "$NEW_VERSION" = "$TARGET_VERSION"+change* ]]; then echo "The target version $TARGET_VERSION and the new version $NEW_VERSION did not match" >&2; exit 1; fi
+    if [[ ! "$NEW_VERSION" = "$TARGET_VERSION" ]]; then
+        echo "The target version $TARGET_VERSION and the new version $NEW_VERSION did not match" >&2
+        exit 1
+    fi
     NEW_VERSION="$TARGET_VERSION"
 fi
 

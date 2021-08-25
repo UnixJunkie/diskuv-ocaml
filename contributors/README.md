@@ -61,7 +61,7 @@ When you think you are done, you need to test. Publish a prerelease:
 
 Test it, and repeat until all problems are fixed.
 
-Finally:
+Finally, after you have *at least one* prerelease:
 
 ```powershell
 & $env:DiskuvOCamlHome\tools\MSYS2\usr\bin\make.exe release-complete

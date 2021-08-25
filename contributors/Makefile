@@ -69,7 +69,7 @@ release-start-major:
 	@PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH" ; \
 	if which pacman >/dev/null 2>&1 && which cygpath >/dev/null 2>&1; then HOME="$$USERPROFILE"; fi; \
 	cd .. && bump2version major --no-tag --message 'Start v{new_version} release' --verbose && \
-	NEW_VERSION=`awk '$$1=="current_version"{print $$NF; exit 0}' .bumpversion.cfg` && \
+	NEW_VERSION=`awk '$$1=="current_version"{print $$NF; exit 0}' .bumpversion.prerelease.cfg` && \
 	printf '## %s (@@YYYYMMDD@@)\n\n' $$NEW_VERSION > contributors/changes/v$$NEW_VERSION.md
 
 .PHONY: release-start-minor
@@ -77,7 +77,7 @@ release-start-minor:
 	@PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH" ; \
 	if which pacman >/dev/null 2>&1 && which cygpath >/dev/null 2>&1; then HOME="$$USERPROFILE"; fi; \
 	cd .. && bump2version minor --no-tag --message 'Start v{new_version} release' --verbose && \
-	NEW_VERSION=`awk '$$1=="current_version"{print $$NF; exit 0}' .bumpversion.cfg` && \
+	NEW_VERSION=`awk '$$1=="current_version"{print $$NF; exit 0}' .bumpversion.prerelease.cfg` && \
 	printf '## %s (@@YYYYMMDD@@)\n\n' $$NEW_VERSION > contributors/changes/v$$NEW_VERSION.md
 
 .PHONY: release-start-patch
@@ -85,7 +85,7 @@ release-start-patch:
 	@PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH" ; \
 	if which pacman >/dev/null 2>&1 && which cygpath >/dev/null 2>&1; then HOME="$$USERPROFILE"; fi; \
 	cd .. && bump2version patch --no-tag --message 'Start v{new_version} release' --verbose && \
-	NEW_VERSION=`awk '$$1=="current_version"{print $$NF; exit 0}' .bumpversion.cfg` && \
+	NEW_VERSION=`awk '$$1=="current_version"{print $$NF; exit 0}' .bumpversion.prerelease.cfg` && \
 	printf '## %s (@@YYYYMMDD@@)\n\n' $$NEW_VERSION > contributors/changes/v$$NEW_VERSION.md
 
 .PHONY: _build/portable-distribution.zip
