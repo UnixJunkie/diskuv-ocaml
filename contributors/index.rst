@@ -159,7 +159,9 @@ The *Diskuv OCaml* distribution will automatically install the following compone
 How to Install
 --------------
 
-  These instructions are for Windows developers.
+.. note::
+
+   These instructions are for Windows developers.
 
 Requirements
 ~~~~~~~~~~~~
@@ -199,9 +201,9 @@ ONE. *Download the distribution.*
 TWO. *Run the Install World script.*
 """"""""""""""""""""""""""""""""""""
 
-.. sidebar:: Do you have 4 hours?
+.. warning::
 
-  Be prepared to wait for at least 4 hours for the installer to finish. In the meantime you can still use your
+  **Be prepared to wait for at least 4 hours for the installer to finish.** In the meantime you can still use your
   computer for other things like web browsing.
 
 1. Open PowerShell (press the Windows key ⊞, type "PowerShell" and then Open ``Windows PowerShell``) if

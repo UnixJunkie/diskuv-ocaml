@@ -52,19 +52,24 @@ cd "$TOPDIR"
 set_dkmlparenthomedir
 # shellcheck disable=SC2154
 install -d "$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version"
+RSYNC_OPTS=(-a); if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then RSYNC_OPTS+=(--progress); fi
 if is_windows_build_machine; then
     OPAMREPOS_MIXED=$(cygpath -am "$DKMLPARENTHOME_BUILDHOST\\opam-repositories\\$dkml_root_version")
     OPAMREPOS_UNIX=$(cygpath -au "$DKMLPARENTHOME_BUILDHOST\\opam-repositories\\$dkml_root_version")
     # shellcheck disable=SC2154
     DISKUVOCAMLHOME_UNIX=$(cygpath -au "$DiskuvOCamlHome")
-    rsync -a \
+    if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
+    rsync "${RSYNC_OPTS[@]}" \
         "$DISKUVOCAMLHOME_UNIX/tools/ocaml-opam/$OPAM_PORT_FOR_SWITCHES_IN_WINDOWS-$OPAM_ARCH_IN_WINDOWS"/cygwin64/home/opam/opam-repository/ \
         "$OPAMREPOS_UNIX"/fdopen-mingw
+    set +x
 else
     OPAMREPOS_MIXED="$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version"
     OPAMREPOS_UNIX="$OPAMREPOS_MIXED"
 fi
-rsync -a "$DKMLDIR"/etc/opam-repositories/ "$OPAMREPOS_UNIX"
+if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
+rsync "${RSYNC_OPTS[@]}" "$DKMLDIR"/etc/opam-repositories/ "$OPAMREPOS_UNIX"
+set +x
 
 # -----------------------
 # BEGIN opam init

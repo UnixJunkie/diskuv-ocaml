@@ -212,8 +212,15 @@ if (-not $SkipGitForWindowsInstallBecauseNonGitForWindowsDetected) {
             -ArgumentList @("/SP-", "/SILENT", "/SUPPRESSMSGBOXES", "/CURRENTUSER", "/NORESTART")
         $exitCode = $proc.ExitCode
         if ($exitCode -ne 0) {
-            Write-Warning "Git installer failed"
+            Write-Progress -Id $ProgressId -ParentId $ParentProgressId -Activity $global:ProgressActivity -Completed
+            $ErrorActionPreference = "Continue"
+            Write-Error "Git installer failed"
+            Remove-Item "$GitWindowsSetupAbsPath" -Recurse -Force
             Start-Sleep 5
+            Write-Host ''
+            Write-Host 'One reason why the Git installer will fail is because you did not'
+            Write-Host 'click "Yes" when it asks you to allow the installation.'
+            Write-Host 'You can try to rerun the script.'
             Write-Host ''
             Write-Host 'Press any key to exit this script...';
             $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown');
@@ -230,8 +237,8 @@ if (-not $SkipGitForWindowsInstallBecauseNonGitForWindowsDetected) {
         $env:PATH = $OldPath
     }
 }
-if (Test-Path -Path $GitWindowsSetupAbsPath) {
-    Remove-Item -Path $GitWindowsSetupAbsPath -Recurse -Force
+if (Test-Path -Path "$GitWindowsSetupAbsPath") {
+    Remove-Item -Path "$GitWindowsSetupAbsPath" -Recurse -Force
 }
 
 $GitPath = (get-item "$GitExe").Directory.FullName
@@ -314,7 +321,12 @@ $MSYS2Packages = @(
     # "git", # use Git for Windows so can have filesystem cache. Without it Opam can be very slow.
     "patch",
     "rsync",
-    # "tar", # use C:\WINDOWS\System32\tar.exe instead which does not have MSYS2 ambiguous file path resolution. Available in all Windows SKUs since build 17063 (https://docs.microsoft.com/en-us/virtualization/community/team-blog/2017/20171219-tar-and-curl-come-to-windows)
+    # We don't use C:\WINDOWS\System32\tar.exe even if it is available in all Windows SKUs since build
+    # 17063 (https://docs.microsoft.com/en-us/virtualization/community/team-blog/2017/20171219-tar-and-curl-come-to-windows)
+    # because get:
+    #   ocamlbuild-0.14.0/examples/07-dependent-projects/libdemo: Can't create `..long path with too many backslashes..`# tar.exe: Error exit delayed from previous errors.
+    #   MSYS2 seems to be able to deal with excessive backslashes
+    "tar",
     "unzip",
 
     # ----
@@ -1109,6 +1121,7 @@ catch {
 
 Write-Progress -Id $ProgressId -ParentId $ParentProgressId -Activity $global:ProgressActivity -Completed
 
+Clear-Host
 Write-Host ""
 Write-Host ""
 Write-Host ""

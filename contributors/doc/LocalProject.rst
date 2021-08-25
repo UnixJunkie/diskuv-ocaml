@@ -28,7 +28,7 @@ This is easiest to see with an example.
 
       PS1> cd ~\DiskuvOCamlProjects
 
-      PS1> git clone https://gitlab.com/diskuv/diskuv-ocaml-starter.git
+      PS1> git clone --recursive https://gitlab.com/diskuv/diskuv-ocaml-starter.git
 
 You now have a local project in ``~\DiskuvOCamlProjects\diskuv-ocaml-starter``!
 
@@ -36,7 +36,7 @@ You now have a local project in ``~\DiskuvOCamlProjects\diskuv-ocaml-starter``!
 
     **Spaces in your project directory**
 
-    A central part of a local project is the file ``Makefile``. There has been a
+    A central part of a Local Project is the file ``Makefile``. There has been a
     `twenty year bug <http://savannah.gnu.org/bugs/?712>`_ open for
     getting GNU Make - the tool that runs the commands in ``Makefile`` - to work
     when there are spaces in directories and filenames. Please don't wait for it
@@ -45,15 +45,29 @@ You now have a local project in ``~\DiskuvOCamlProjects\diskuv-ocaml-starter``!
     like in ``C:\Users\Jane‿Smith\DiskuvOCamlProjects`` then
     use ``C:\DiskuvOCamlProjects`` instead of ``~\DiskuvOCamlProjects``
     throughout the rest of this documentation. You may need to ask your Administrator
-    if you are on a shared PC.
+    to create it for you if you are on a shared PC.
 
-We can compile the source code by running the ``build-dev`` target:
+We can initialize an Opam repository, assemble an Opam
+switch and compile the source code all by running the single ``build-dev`` target:
 
 .. code-block:: ps1con
 
     PS1> cd ~\DiskuvOCamlProjects\diskuv-ocaml-starter
 
-    PS1> ./make build-dev
+    PS1> ./make build-dev DKML_BUILD_TRACE=ON
+
+We turned on tracing (``DKML_BUILD_TRACE=ON``) so you could see what is happening;
+the three steps of ``build-dev`` are:
+
+1. Initialize an Opam repository. This takes **several minutes** but only needs to be
+   done once per user (you!) per machine.
+2. Assemble (create) an Opam switch by compiling all the third-party packages you
+   need. Any new packages you add to ``.opam`` files will be added to your Opam switch.
+   This can take **tens of minutes** but only needs to be done once per Local
+   Project.
+3. Compile your source code. This is usually in the **0-5 seconds** range unless your
+   project is large or uses C code. There is a special Makefile target called
+   ``quickbuild-dev`` that skips the first two steps and only compiles your source code.
 
 The starter application is the `Complete Program <https://dev.realworldocaml.org/guided-tour.html>`_
 example from the `Real World OCaml book <https://dev.realworldocaml.org/toc.html>`_. Let us run it.
@@ -69,7 +83,19 @@ typing Ctrl-C or Enter + Ctrl-Z:
     > 94.5
     > Total: 100.5
 
-You fetched a Local Project, built its code, and then ran the resulting application.
+Recap: You fetched a Local Project, built its code and all of its dependencies, and then ran
+the resulting application!
+
+In your own projects you will likely be making edits, and then building and repeating those
+two steps over and over again. Since you already did ``build-dev`` once, use the
+following to "quickly" build your Local Project:
+
+.. code-block:: ps1con
+
+    PS1> ./make quickbuild-dev
+
+The next section `Integrated Development Environment (IDE)` will go over how
+to automatically and almost instantaneously build your code whenever you make an edit.
 
 Integrated Development Environment (IDE)
 ----------------------------------------
@@ -178,6 +204,12 @@ Visual Studio Development
 
    Keep this Terminal open for as long as you have the local project (in this case ``diskuv-ocaml-starter``) open.
    It will watch your local project for any changes you make and then automatically build them.
+
+   The automatic building uses
+   `Dune's watch mode <https://dune.readthedocs.io/en/stable/usage.html#watch-mode>`_;
+   its change detection and compile times should be almost instantaneous for most
+   projects.
+
 3. Open another Terminal. In this terminal you can quickly test some pieces of your code.
    To test ``lib/dune`` and ``lib/terminal_color.ml`` which come directly from the
    `Real World OCaml book <https://dev.realworldocaml.org/variants.html>`_ you would type:
@@ -235,7 +267,15 @@ At this point you should be able to complete the first
 
 Finished?
 
-*TODO* Tool to make your own starter project.
+*TODO* Missing a tool to make your own Local Project.
+
+It needs to include:
+
+.. code-block:: ps1con
+
+    PS1> git submodule add `
+            https://gitlab.com/diskuv/diskuv-ocaml.git `
+            vendor/diskuv-ocaml
 
 Standard Layout
 ---------------
