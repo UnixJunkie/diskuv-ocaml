@@ -2,7 +2,7 @@
 # -------------------------------------------------------
 # create-opam-switch.sh [-b BUILDTYPE -p PLATFORM | [-b BUILDTYPE] -s]
 #
-# Purpose: 
+# Purpose:
 # 1. Create an OPAMSWITCH (`opam switch create`) as
 #    a local switch that corresponds to the PLATFORM's BUILDTYPE
 #    or to the 'diskuv-system' switch. The created switch will have a working
@@ -15,11 +15,12 @@
 set -euf -o pipefail
 
 PINNED_PACKAGES=(
-    # The format is `PACKAGE_NAME,PACKAGE_VERSION`. Notice the **comma**!
+    # The format is `PACKAGE_NAME,PACKAGE_VERSION`. Notice the **comma** inside the quotes!
     "dune-configurator,2.9.0"
     "bigstringaf,0.8.0"
     "ppx_expect,v0.14.1"
     "digestif,1.0.1"
+    "ocp-indent,1.8.2-windowssupport"
 )
 
 # ------------------
@@ -186,11 +187,13 @@ OPAM_SWITCH_CREATE_OPTS=(
 # Since there is no ocaml-variants.4.12.0+options+msvc64+msys2 all the compiler options are ignored for Windows!!!
 # (There is an action item in etc/opam-repositories/diskuv-opam-repo/packages/ocaml-variants/ocaml-variants.4.12.0+msvc64+msys2/opam)
 if is_windows_build_machine; then
+    OPAMREPOS_CHOICE=("diskuv-$dkml_root_version" "fdopen-mingw-$dkml_root_version" "default")
     OPAM_SWITCH_CREATE_OPTS+=(
         --repos="diskuv-$dkml_root_version,fdopen-mingw-$dkml_root_version,default"
         --packages="ocaml-variants.$OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS"
     )
 else
+    OPAMREPOS_CHOICE=("diskuv-$dkml_root_version" "default")
     OPAM_SWITCH_CREATE_OPTS+=(
         --repos="diskuv-$dkml_root_version,default"
         --packages="ocaml-variants.4.12.0+options$OCAML_OPTIONS"
@@ -213,6 +216,24 @@ if ! is_minimal_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
     # do real install
     "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" -1 "$OPAM_SWITCH_PREHOOK" \
         switch create "$OPAMSWITCHDIR_EXPAND" "${OPAM_SWITCH_CREATE_OPTS[@]}"
+else
+    # We need to upgrade each Opam switch's selected/ranked Opam repository choices whenever Diskuv OCaml
+    # has an upgrade. If we don't the PINNED_PACKAGES may fail.
+    # We know from `diskuv-$dkml_root_version` what Diskuv OCaml version the Opam switch is using, so
+    # we have the logic to detect here when it is time to upgrade!
+    DKML_BUILD_TRACE=OFF "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" \
+        repository --switch "$OPAMSWITCHDIR_EXPAND" \
+        list --short > "$WORK"/list
+    if awk -v N="diskuv-$dkml_root_version" '$1==N {exit 1}' "$WORK"/list; then
+        # Time to upgrade. We need to set the repository (almost instantaneous) and then
+        # do a `opam update` so the switch has the latest repository definitions.
+        OPAM_REPO_UPGRADE_OPTS=(--switch "$OPAMSWITCHDIR_EXPAND")
+        if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then OPAM_REPO_UPGRADE_OPTS+=(--debug-level 2); fi
+        "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" \
+            repository set-repos "${OPAM_REPO_UPGRADE_OPTS[@]}" "${OPAMREPOS_CHOICE[@]}"
+        "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" \
+            update "${OPAM_REPO_UPGRADE_OPTS[@]}"
+    fi
 fi
 
 # END opam switch create

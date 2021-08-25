@@ -50,9 +50,9 @@ cd "$TOPDIR"
 # TODO: This implementation won't work in containers; needs a mount point for the opam repositories, and
 # an @@EXPAND_DKMLPARENTHOME@@ macro
 set_dkmlparenthomedir
+# shellcheck disable=SC2154
 install -d "$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version"
 if is_windows_build_machine; then
-    # shellcheck disable=SC2154
     OPAMREPOS_MIXED=$(cygpath -am "$DKMLPARENTHOME_BUILDHOST\\opam-repositories\\$dkml_root_version")
     OPAMREPOS_UNIX=$(cygpath -au "$DKMLPARENTHOME_BUILDHOST\\opam-repositories\\$dkml_root_version")
     # shellcheck disable=SC2154

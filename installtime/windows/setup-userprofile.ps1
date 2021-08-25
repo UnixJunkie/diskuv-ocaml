@@ -895,7 +895,6 @@ try {
             -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps bash -x '$DkmlPath\installtime\unix\init-opam-root.sh' dev"
     }
 
-
     # END opam init
     # ----------------------------------------------------------------
 
@@ -924,7 +923,7 @@ try {
     if (!$global:SkipOpamSetup) {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
             -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\create-opam-switch.sh' -s -b Release"
-        }
+    }
 
     # END opam switch create diskuv-system
     # ----------------------------------------------------------------
