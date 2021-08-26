@@ -68,7 +68,7 @@ auth-gitlab-cli: install-gitlab-cli
 release-start-major:
 	@PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH" ; \
 	if which pacman >/dev/null 2>&1 && which cygpath >/dev/null 2>&1; then HOME="$$USERPROFILE"; fi; \
-	cd .. && bump2version major --no-tag --message 'Start v{new_version} release' --verbose && \
+	cd .. && bump2version major --config-file .bumpversion.prerelease.cfg --no-tag --message 'Start v{new_version} release' --verbose && \
 	NEW_VERSION=`awk '$$1=="current_version"{print $$NF; exit 0}' .bumpversion.prerelease.cfg` && \
 	printf '## %s (@@YYYYMMDD@@)\n\n' $$NEW_VERSION > contributors/changes/v$$NEW_VERSION.md
 
@@ -76,7 +76,7 @@ release-start-major:
 release-start-minor:
 	@PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH" ; \
 	if which pacman >/dev/null 2>&1 && which cygpath >/dev/null 2>&1; then HOME="$$USERPROFILE"; fi; \
-	cd .. && bump2version minor --no-tag --message 'Start v{new_version} release' --verbose && \
+	cd .. && bump2version minor --config-file .bumpversion.prerelease.cfg --no-tag --message 'Start v{new_version} release' --verbose && \
 	NEW_VERSION=`awk '$$1=="current_version"{print $$NF; exit 0}' .bumpversion.prerelease.cfg` && \
 	printf '## %s (@@YYYYMMDD@@)\n\n' $$NEW_VERSION > contributors/changes/v$$NEW_VERSION.md
 
@@ -84,7 +84,7 @@ release-start-minor:
 release-start-patch:
 	@PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH" ; \
 	if which pacman >/dev/null 2>&1 && which cygpath >/dev/null 2>&1; then HOME="$$USERPROFILE"; fi; \
-	cd .. && bump2version patch --no-tag --message 'Start v{new_version} release' --verbose && \
+	cd .. && bump2version patch --config-file .bumpversion.prerelease.cfg --no-tag --message 'Start v{new_version} release' --verbose && \
 	NEW_VERSION=`awk '$$1=="current_version"{print $$NF; exit 0}' .bumpversion.prerelease.cfg` && \
 	printf '## %s (@@YYYYMMDD@@)\n\n' $$NEW_VERSION > contributors/changes/v$$NEW_VERSION.md
 
