@@ -33,7 +33,7 @@
 
     & $env:DiskuvOCamlHome\tools\MSYS2\msys2_shell.cmd
 
-    `.\make.cmd` from a local project is way better though.
+    `.\makeit.cmd` from a local project is way better though.
 .Parameter $ParentProgressId
     The PowerShell progress identifier. Optional, defaults to -1.
     Use when embedding this script within another setup program

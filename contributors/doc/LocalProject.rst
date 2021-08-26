@@ -54,7 +54,7 @@ switch and compile the source code all by running the single ``build-dev`` targe
 
     PS1> cd ~\DiskuvOCamlProjects\diskuv-ocaml-starter
 
-    PS1> ./make build-dev DKML_BUILD_TRACE=ON
+    PS1> ./makeit build-dev DKML_BUILD_TRACE=ON
 
 We turned on tracing (``DKML_BUILD_TRACE=ON``) so you could see what is happening;
 the three steps of ``build-dev`` are:
@@ -92,7 +92,7 @@ following to "quickly" build your Local Project:
 
 .. code-block:: ps1con
 
-    PS1> ./make quickbuild-dev
+    PS1> ./makeit quickbuild-dev
 
 The next section `Integrated Development Environment (IDE)` will go over how
 to automatically and almost instantaneously build your code whenever you make an edit.
@@ -184,7 +184,7 @@ Visual Studio Code Development
 
    .. code-block:: ps1con
 
-        [diskuv-ocaml-starter]$ ./make dkml-devmode
+        [diskuv-ocaml-starter]$ ./makeit dkml-devmode
         >> while true; do \
         >>         DKML_BUILD_TRACE=OFF vendor/diskuv-ocaml/runtime/unix/platform-dune-exec -p dev -b Debug \
         >>                 build --watch --terminal-persistence=clear-on-rebuild \
@@ -216,7 +216,7 @@ Visual Studio Code Development
 
    .. code-block:: ps1con
 
-        PS Z:\source\diskuv-ocaml-starter> ./make shell-dev
+        PS Z:\source\diskuv-ocaml-starter> ./makeit shell-dev
         >> diskuv-ocaml-starter$
 
    .. code-block:: shell-session
@@ -269,14 +269,6 @@ Finished?
 
 *TODO* Missing a tool to make your own Local Project.
 
-It needs to include:
-
-.. code-block:: ps1con
-
-    PS1> git submodule add `
-            https://gitlab.com/diskuv/diskuv-ocaml.git `
-            vendor/diskuv-ocaml
-
 Standard Layout
 ---------------
 
@@ -324,7 +316,19 @@ The directory structure does _not_ need to look like the standard layout.
 
 The requirements are:
 
-1. There must be a ``dune-project`` in an ancestor directory of the ``diskuv-ocaml-starter`` Git submodule.
+1.  Use ``diskuv-ocaml`` as a submodule, as in:
+
+    .. code-block:: ps1con
+
+        PS1> git submodule add `
+                https://gitlab.com/diskuv/diskuv-ocaml.git `
+                vendor/diskuv-ocaml
+
+
+    You can place the submodule in any directory (not just ``vendor``) but the basename
+    should be ``diskuv-ocaml``.
+
+2. There must be a ``dune-project`` in an ancestor directory of the ``diskuv-ocaml`` Git submodule.
    For example, it is fine to have:
 
    ::
@@ -337,7 +341,7 @@ The requirements are:
                 src/
                     c/
                         d/
-                            diskuv-ocaml-starter/
+                            diskuv-ocaml/
 
 *TODO* Complete.
 

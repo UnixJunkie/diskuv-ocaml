@@ -24,7 +24,7 @@ problematic behavior, and link to it here in the bug report.)
 (Paste any relevant logs - please use code blocks (```) to format console output, logs, and code, as
 it's very hard to read otherwise.)
 
-(ALWAYS include the output of `.\make.cmd dkml-report` if you are on Windows or `make dkml-report` if you are on Unix)
+(ALWAYS include the output of `./makeit dkml-report`)
 
 ## Possible fixes
 

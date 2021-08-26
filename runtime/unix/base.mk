@@ -149,7 +149,7 @@ HORIZONTAL_RULE_80COLS = "======================================================
 # shell-PLATFORM-BUILDTYPE runs a shell in PLATFORM's platform for build type BUILDTYPE
 # shell runs a shell in the dev platform without an Opam switch (unless Opam has a global selected switch)
 
-# Very useful for developing on Windows with `.\make shell-dev`
+# Very useful for developing on Windows with `./makeit shell-dev`
 
 define SHELL_platform_template =
 .PHONY: shell-$(1)

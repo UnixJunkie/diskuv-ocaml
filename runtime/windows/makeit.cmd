@@ -69,7 +69,7 @@ SET "DKMAKE_TOPDIR=%%F"
 if not exist "%DKMAKE_TOPDIR%\dune-project" (
 	echo.
 	echo.The 'dune-project' file was not found. Make sure you are running
-	echo.this %~dp0\make.cmd script as a subdirectory / git submodule of
+	echo.this %~dp0\makeit.cmd script as a subdirectory / git submodule of
 	echo.your local project.
 	echo.
 	exit /b 1
@@ -161,7 +161,7 @@ if %ERRORLEVEL% neq 0 (
 	exit /b 1
 )
 
-REM Clear environment variables that will pollute the Makefile environment, especially for a clean environment in `.\make.cmd shell`
+REM Clear environment variables that will pollute the Makefile environment, especially for a clean environment in `./makeit shell`
 set DKMAKE_INTERNAL_CYGPATH=
 set DKMAKE_INTERNAL_DISKUVOCAMLHOME=
 set DKMAKE_INTERNAL_WINPATH=

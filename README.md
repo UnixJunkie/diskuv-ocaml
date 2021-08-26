@@ -14,14 +14,14 @@ The preview versions 0.1.x run on **64-bit Windows** and:
 
    ```kotlin
     [PS Z:\source\diskuv-ocaml-starter] cd ~/DiskuvOCamlProjects/diskuv-ocaml-starter
-    [PS Z:\source\diskuv-ocaml-starter] ./make build-dev
+    [PS Z:\source\diskuv-ocaml-starter] ./makeit build-dev
     [PS Z:\source\diskuv-ocaml-starter] _build/default/bin/main.exe
     > 1
     > 2
     > 3
     > 94.5
     > Total: 100.5
-    [PS Z:\source\diskuv-ocaml-starter] ./make shell-dev
+    [PS Z:\source\diskuv-ocaml-starter] ./makeit shell-dev
    ```
 
    ```lasso

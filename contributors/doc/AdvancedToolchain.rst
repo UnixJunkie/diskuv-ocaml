@@ -70,10 +70,10 @@ First we replicated the problem we had during compilation by following the boile
 
 .. code-block:: ps1con
 
-    PS Z:\source\diskuv-ocaml-starter> ./make build-dev
+    PS Z:\source\diskuv-ocaml-starter> ./makeit build-dev
     >> ... some errors in package core_kernel.v0.14.2 ...
 
-    PS Z:\source\diskuv-ocaml-starter> ./make shell-dev
+    PS Z:\source\diskuv-ocaml-starter> ./makeit shell-dev
     >> [diskuv-ocaml-starter]$
 
 .. code-block:: shell-session
@@ -557,7 +557,7 @@ If that still doesn't work just do:
 
     opam repository remove diskuv-0.1.1 --all
 
-    # On Windows do: ./make init-dev
+    # On Windows do: ./makeit init-dev
     make init-dev
 
     opam repository priority diskuv-0.1.1 1 --all
