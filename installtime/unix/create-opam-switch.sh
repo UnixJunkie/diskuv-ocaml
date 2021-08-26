@@ -21,6 +21,12 @@ PINNED_PACKAGES=(
     "ppx_expect,v0.14.1"
     "digestif,1.0.1"
     "ocp-indent,1.8.2-windowssupport"
+    "mirage-crypto,0.10.4-windowssupport"
+    "mirage-crypto-ec,0.10.4-windowssupport"
+    "mirage-crypto-pk,0.10.4-windowssupport"
+    "mirage-crypto-rng,0.10.4-windowssupport"
+    "mirage-crypto-rng-async,0.10.4-windowssupport"
+    "mirage-crypto-rng-mirage,0.10.4-windowssupport"
 )
 
 # ------------------
