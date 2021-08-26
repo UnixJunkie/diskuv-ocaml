@@ -292,11 +292,12 @@ fi
 # Each ___ in `for package_tuple in __ __ __` is `PACKAGE_NAME,PACKAGE_VERSION`. Notice the **comma**!
 # Even though technically we may not need the patches for non-Windows systems, we want the same code
 # running in both Unix and Windows, right?!
+# We add --no-action so the package is not automatically installed but simply pinned.
 for package_tuple in "${PINNED_PACKAGES[@]}"; do
     IFS=',' read -r package_name package_version <<< "$package_tuple"
     # accumulate
     if ! get_opam_switch_state_toplevelsection "$OPAMSWITCHFINALDIR_BUILDHOST" pinned | grep -q "$package_name.$package_version"; then
-        echo "opam pin add ${OPAM_PIN_ADD_OPTS[*]} -k version '$package_name' '$package_version'" >> "$WORK"/pin.sh
+        echo "opam pin add ${OPAM_PIN_ADD_OPTS[*]} --no-action -k version '$package_name' '$package_version'" >> "$WORK"/pin.sh
         NEED_TO_PIN=ON
     fi
 done
