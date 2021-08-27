@@ -36,7 +36,7 @@ that OCaml provides (the sales pitch!), and a good summary of OCaml:
     supported by an active community, and has a rich set of libraries and development tools.
 
 Then we recommend looking at the free online book
-`Real World OCaml <https://dev.realworldocaml.org/index.html/>`_. It will guide you through the language and
+`Real World OCaml <https://dev.realworldocaml.org/index.html>`_. It will guide you through the language and
 explore each of OCaml's major features. You will need a distribution of OCaml to follow along. Windows users
 will need to use the *Diskuv OCaml* distribution (there are other ways to install OCaml on Windows, but they
 are difficult or deprecated), while Linux and macOS users have choices explained in the book. We will
@@ -44,17 +44,17 @@ discuss *Diskuv OCaml* in the next section.
 
 Once you start writing your own code you will need to know where to look to find libraries (called **packages** in
 OCaml). We recommend just browsing the packages at
-`OCamlPro's OCaml Documentation Hub <https://docs.ocaml.pro/html/about.html>`_ since it is fairly comprehensive,
+`OCamlPro's OCaml Documentation Hub <https://docs.ocaml.pro/about.html>`_ since it is fairly comprehensive,
 reasonably up-to-date and has links to most package's documentation. Just click on its
-`Packages tab <https://docs.ocaml.pro/html/index.html>`_ and do a text search with Ctrl-F or ⌘-F:
+`Packages tab <https://docs.ocaml.pro/packages.html>`_ and do a text search with Ctrl-F or ⌘-F:
 
-.. image:: https://docs.ocaml.pro/html/_odoc-theme/index-page.png
+.. image:: https://docs.ocaml.pro/static/imgs/index-page.png
   :width: 400
   :alt: OCamlPro OCaml Documentation Hub Main Index
 
 |
 
-.. image:: https://docs.ocaml.pro/html/_odoc-theme/package-page.png
+.. image:: https://docs.ocaml.pro/static/imgs/package-page.png
   :width: 400
   :alt: OCamlPro OCaml Documentation Hub Package Info for AHROCKSDB.0.2.2
 
@@ -83,7 +83,7 @@ synchronize folders between different operating systems (pretty cool!) was devel
 macOS, Linux and Windows for decades. Yet the
 `defacto Windows distribution of OCaml <https://fdopen.github.io/opam-repository-mingw/2021/02/26/repo-discontinued/>`_
 was deprecated in 2021! The online book
-`Real World OCaml <https://dev.realworldocaml.org/index.html/>`_ solved much of the tribal knowledge problem but you will
+`Real World OCaml <https://dev.realworldocaml.org/index.html>`_ solved much of the tribal knowledge problem but you will
 likely run into some roadblocks. Several companies and groups have filled the void
 (Jane Street, OCaml Labs, OCaml Pro and Facebook among others). *Diskuv OCaml* provides a few critical functions:
 
