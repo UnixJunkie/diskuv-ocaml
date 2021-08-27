@@ -180,8 +180,8 @@ $(foreach platform,dev $(DKML_PLATFORMS),$(foreach buildtype,$(DKML_BUILDTYPES),
 #
 # The many recipes are defined so that `make -j` recipe-based parallelization works well
 
-OPAMS_LINUX   ?= $(OPAM_PKGS_CROSSPLATFORM:=.opam) $(OPAM_PACKAGES_LINUX:=.opam)
-OPAMS_WINDOWS ?= $(OPAM_PKGS_CROSSPLATFORM:=.opam) $(OPAM_PACKAGES_WINDOWS:=.opam)
+OPAMS_LINUX   ?= $(OPAM_PKGS_CROSSPLATFORM:=.opam) $(OPAM_PKGS_LINUX:=.opam)
+OPAMS_WINDOWS ?= $(OPAM_PKGS_CROSSPLATFORM:=.opam) $(OPAM_PKGS_WINDOWS:=.opam)
 
 OPAMS_CSV_LINUX   ?= $(subst $(space),$(comma),$(addprefix ./,$(strip $(OPAMS_LINUX))))
 OPAMS_CSV_WINDOWS ?= $(subst $(space),$(comma),$(addprefix ./,$(strip $(OPAMS_WINDOWS))))
