@@ -1,4 +1,8 @@
 {
     "python.pythonPath": "${workspaceFolder}/contributors/envs",
-    "restructuredtext.confPath": "${workspaceFolder}/contributors"
+    "restructuredtext.confPath": "${workspaceFolder}\\contributors",
+    "ocaml.sandbox": {
+        "kind": "opam",
+        "switch": "${workspaceFolder:diskuv-ocaml}-starter\\build\\dev\\Debug"
+    }
 }

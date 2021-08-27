@@ -5,8 +5,10 @@
 #
 
 $ErrorActionPreference = "Stop"
-$TailRefreshSeconds = 0.25
-$TailLines = 5
+$InvokerTailRefreshSeconds = 0.25
+$InvokerTailLines = 5
+Export-ModuleMember -Variable InvokerTailLines
+Export-ModuleMember -Variable InvokerTailRefreshSeconds
 
 function Invoke-CygwinCommand {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '',
@@ -17,14 +19,16 @@ function Invoke-CygwinCommand {
         [Parameter(Mandatory=$true)]
         $CygwinDir,
         $RedirectStandardOutput,
+        $RedirectStandardError,
         $TailFunction
     )
     $arglist = @("-l",
         "-c",
         ('" { ' + ($Command -replace '"', '\"') + '; } 2>&1 "'))
-    if ($RedirectStandardOutput) {
+    if ($RedirectStandardOutput -and $RedirectStandardError) {
         $proc = Start-Process -NoNewWindow -FilePath $CygwinDir\bin\bash.exe -PassThru `
             -RedirectStandardOutput $RedirectStandardOutput `
+            -RedirectStandardError $RedirectStandardError `
             -ArgumentList $arglist
     } else {
         $proc = Start-Process -NoNewWindow -FilePath $CygwinDir\bin\bash.exe -PassThru `
@@ -33,10 +37,10 @@ function Invoke-CygwinCommand {
     $handle = $proc.Handle # cache proc.Handle https://stackoverflow.com/a/23797762/1479211
     while (-not $proc.HasExited) {
         if ($RedirectStandardOutput -and $TailFunction) {
-            $tail = Get-Content -Path $RedirectStandardOutput -Tail $TailLines
+            $tail = Get-Content -Path $RedirectStandardOutput -Tail $InvokerTailLines
             Invoke-Command $TailFunction -ArgumentList @($tail)
         }
-        Start-Sleep -Seconds $TailRefreshSeconds
+        Start-Sleep -Seconds $InvokerTailRefreshSeconds
     }
     $proc.WaitForExit()
     $exitCode = $proc.ExitCode
@@ -56,6 +60,7 @@ function Invoke-MSYS2Command {
         [Parameter(Mandatory=$true)]
         $MSYS2Dir,
         $RedirectStandardOutput,
+        $RedirectStandardError,
         $TailFunction
     )
     # Note: We use the same environment variable settings as make.cmd
@@ -72,6 +77,7 @@ function Invoke-MSYS2Command {
     if ($RedirectStandardOutput) {
         $proc = Start-Process -NoNewWindow -FilePath $MSYS2Dir\usr\bin\env.exe -PassThru `
             -RedirectStandardOutput $RedirectStandardOutput `
+            -RedirectStandardError $RedirectStandardError `
             -ArgumentList $arglist
     } else {
         $proc = Start-Process -NoNewWindow -FilePath $MSYS2Dir\usr\bin\env.exe -PassThru `
@@ -80,10 +86,10 @@ function Invoke-MSYS2Command {
     $handle = $proc.Handle # cache proc.Handle https://stackoverflow.com/a/23797762/1479211
     while (-not $proc.HasExited) {
         if ($RedirectStandardOutput -and $TailFunction) {
-            $tail = Get-Content -Path $RedirectStandardOutput -Tail $TailLines
+            $tail = Get-Content -Path $RedirectStandardOutput -Tail $InvokerTailLines
             Invoke-Command $TailFunction -ArgumentList @($tail)
         }
-        Start-Sleep -Seconds $TailRefreshSeconds
+        Start-Sleep -Seconds $InvokerTailRefreshSeconds
     }
     $proc.WaitForExit()
     $exitCode = $proc.ExitCode

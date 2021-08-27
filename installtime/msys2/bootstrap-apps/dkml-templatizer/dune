@@ -1,0 +1,3 @@
+(executable
+ (name dkml_templatizer)
+ (libraries feather jingoo str))

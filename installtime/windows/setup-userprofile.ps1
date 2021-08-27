@@ -127,7 +127,7 @@ if (!$global:Skip64BitCheck -and ![Environment]::Is64BitOperatingSystem) {
 
 $global:ProgressStep = 0
 $global:ProgressActivity = $null
-$ProgressTotalSteps = 17
+$ProgressTotalSteps = 18
 $ProgressId = $ParentProgressId + 1
 $global:ProgressStatus = $null
 
@@ -336,6 +336,18 @@ $MSYS2Packages = @(
     "pkgconf",
 
     # ----
+    # Needed by OCaml package `feather`
+    # ----
+
+    "procps", # provides `pgrep`
+
+    # ----
+    # Needed by OCaml package `ctypes`
+    # ----
+
+    "libffi-devel",
+
+    # ----
     # Needed for our own sanity!
     # ----
 
@@ -361,7 +373,13 @@ if ([Environment]::Is64BitOperatingSystem) {
     )
 }
 $DistributionPackages = @(
-    "dune.2.9.0", # already present from dune-configurator pinning
+    "dune.2.9.0",
+    # Really only for dkml_templatizer; may be used for creating local projects as well.
+    # Would have used `shexp.0.14.0` but wasn't compiling on Windows because of Opam's complaint
+    # that `posixat` had 'os != "win32"'
+    "feather.0.3.0",
+    # Really only for dkml_templatizer; may be used for creating local projects as well.
+    "jingoo.1.4.3",
     "ocaml-lsp-server.1.7.0",
     "ocamlfind.1.9.1",
     "ocamlformat.0.19.0",
@@ -470,6 +488,56 @@ $TempPath = Start-BlueGreenDeploy -ParentPath $TempParentPath `
 
 $AuditLog = Join-Path -Path $ProgramPath -ChildPath "setup-userprofile.full.log"
 $AuditCurrentLog = Join-Path -Path $ProgramPath -ChildPath "setup-userprofile.current.log"
+$AuditCurrentErr = Join-Path -Path $ProgramPath -ChildPath "setup-userprofile.current-error.log"
+function Get-CurrentTimestamp {
+    (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffK")
+}
+function Invoke-Win32CommandWithProgress {
+    param (
+        [Parameter(Mandatory=$true)]
+        $FilePath,
+        $ArgumentList
+    )
+    # Append what we will do into $AuditLog
+    $Command = "$FilePath $($ArgumentList -join ' ')"
+    $what = "[Win32] $Command"
+    Add-Content -Path $AuditLog -Value "$(Get-CurrentTimestamp) $what"
+
+    # Truncate current error log
+    Set-Content -Path $AuditCurrentErr -Value ''
+
+    if (!$global:SkipProgress) {
+        $global:ProgressStatus = $what
+        Write-Progress -Id $ProgressId `
+            -ParentId $ParentProgressId `
+            -Activity $global:ProgressActivity `
+            -Status $what `
+            -PercentComplete (100 * ($global:ProgressStep / $ProgressTotalSteps))
+    }
+    $proc = Start-Process -FilePath $FilePath `
+        -NoNewWindow `
+        -ArgumentList $ArgumentList `
+        -PassThru `
+        -RedirectStandardOutput $AuditCurrentLog -RedirectStandardError $AuditCurrentErr
+    $handle = $proc.Handle # cache proc.Handle https://stackoverflow.com/a/23797762/1479211
+    while (-not $proc.HasExited) {
+        if (!$global:SkipProgress) {
+            $tail = Get-Content -Path $AuditCurrentLog -Tail $InvokerTailLines
+            Write-ProgressCurrentOperation $tail
+        }
+        Start-Sleep -Seconds $InvokerTailRefreshSeconds
+    }
+    $proc.WaitForExit()
+    $exitCode = $proc.ExitCode
+    if ($exitCode -ne 0) {
+        $err = Get-Content -Path $AuditCurrentErr
+        Write-Error "Win32 command failed! Exited with $exitCode. Command was: $Command.`nError was: $err"
+        throw
+    }
+    # Append $AuditCurrentLog and $AuditCurrentErr onto $AuditLog
+    Add-Content -Path $AuditLog -Value (Get-Content -Path $AuditCurrentLog)
+    Add-Content -Path $AuditLog -Value (Get-Content -Path $AuditCurrentErr)
+}
 function Invoke-CygwinCommandWithProgress {
     param (
         [Parameter(Mandatory=$true)]
@@ -480,7 +548,7 @@ function Invoke-CygwinCommandWithProgress {
     )
     # Append what we will do into $AuditLog
     $what = "[$CygwinName] $Command"
-    Add-Content -Path $AuditLog -Value $what
+    Add-Content -Path $AuditLog -Value "$(Get-CurrentTimestamp) $what"
 
     if (!$global:SkipProgress) {
         $global:ProgressStatus = $what
@@ -490,14 +558,15 @@ function Invoke-CygwinCommandWithProgress {
             -Status $what `
             -PercentComplete (100 * ($global:ProgressStep / $ProgressTotalSteps))
         Invoke-CygwinCommand -Command $Command -CygwinDir $CygwinDir `
-            -RedirectStandardOutput $AuditCurrentLog -TailFunction ${function:\Write-ProgressCurrentOperation}
+            -RedirectStandardOutput $AuditCurrentLog -RedirectStandardError $AuditCurrentErr `
+            -TailFunction ${function:\Write-ProgressCurrentOperation}
     } else {
         Invoke-CygwinCommand -Command $Command -CygwinDir $CygwinDir `
-            -RedirectStandardOutput $AuditCurrentLog
+            -RedirectStandardOutput $AuditCurrentLog -RedirectStandardError $AuditCurrentErr
     }
-    # Append $AuditCurrentLog onto $AuditLog
-    Add-Content -Path $AuditLog -Value $what
+    # Append $AuditCurrentLog and $AuditCurrentErr onto $AuditLog
     Add-Content -Path $AuditLog -Value (Get-Content -Path $AuditCurrentLog)
+    Add-Content -Path $AuditLog -Value (Get-Content -Path $AuditCurrentErr)
 }
 function Invoke-MSYS2CommandWithProgress {
     param (
@@ -512,7 +581,7 @@ function Invoke-MSYS2CommandWithProgress {
 
     # Append what we will do into $AuditLog
     $what = "[MSYS2] $Command"
-    Add-Content -Path $AuditLog -Value $what
+    Add-Content -Path $AuditLog -Value "$(Get-CurrentTimestamp) $what"
 
     if (!$global:SkipProgress) {
         $global:ProgressStatus = $what
@@ -523,13 +592,15 @@ function Invoke-MSYS2CommandWithProgress {
             -CurrentOperation $Command `
             -PercentComplete (100 * ($global:ProgressStep / $ProgressTotalSteps))
         Invoke-MSYS2Command -Command $Command -MSYS2Dir $MSYS2Dir `
-            -RedirectStandardOutput $AuditCurrentLog -TailFunction ${function:\Write-ProgressCurrentOperation}
+            -RedirectStandardOutput $AuditCurrentLog -RedirectStandardError $AuditCurrentErr `
+            -TailFunction ${function:\Write-ProgressCurrentOperation}
     } else {
         Invoke-MSYS2Command -Command $Command -MSYS2Dir $MSYS2Dir `
-            -RedirectStandardOutput $AuditCurrentLog
+        -RedirectStandardOutput $AuditCurrentLog -RedirectStandardError $AuditCurrentErr
     }
-    # Append $AuditCurrentLog onto $AuditLog
+    # Append $AuditCurrentLog and $AuditCurrentErr onto $AuditLog
     Add-Content -Path $AuditLog -Value (Get-Content -Path $AuditCurrentLog)
+    Add-Content -Path $AuditLog -Value (Get-Content -Path $AuditCurrentErr)
 }
 
 # From here on we need to stuff $ProgramPath with all the binaries for the distribution
@@ -653,7 +724,7 @@ try {
     $CygwinMirror = "http://cygwin.mirror.constant.com"
 
     # Skip with ... $global:SkipCygwinSetup = $true ... remove it with ... Remove-Variable SkipCygwinSetup
-    if (!$global:SkipCygwinSetup) {
+    if (!$global:SkipCygwinSetup -or (-not (Test-Path "$CygwinRootPath\bin\mintty.exe"))) {
         # https://cygwin.com/faq/faq.html#faq.setup.cli
         $CommonCygwinMSYSOpts = "-qWnNdOfgoB"
         $proc = Start-Process -FilePath $CygwinSetupExe -Wait -PassThru `
@@ -789,7 +860,7 @@ try {
         Invoke-CygwinCommandWithProgress `
             -CygwinName "ocaml-opam/mingw-amd64" `
             -CygwinDir "$OcamlOpamRootPath\mingw-amd64\cygwin64" `
-            -Command "env TOPDIR=/opt/diskuv-ocaml/installtime/apps /opt/diskuv-ocaml/installtime/compile-native-opam.sh '$Dkml_OcamlOpamCygwinAbsPath' $AvailableOpamVersion '$OpamBootstrap_OcamlOpamCygwinAbsPath' '$ProgramToolOpam_OcamlOpamCygwinAbsPath'"
+            -Command "env TOPDIR=/opt/diskuv-ocaml/installtime/bootstrap-apps /opt/diskuv-ocaml/installtime/compile-native-opam.sh '$Dkml_OcamlOpamCygwinAbsPath' $AvailableOpamVersion '$OpamBootstrap_OcamlOpamCygwinAbsPath' '$ProgramToolOpam_OcamlOpamCygwinAbsPath'"
 
         # Install it in the final location. Do a tiny safety check and only install from a whitelist of file extensions.
         Write-Progress -Activity "$DeploymentMark $ProgressActivity" -Status "Installing opam.exe"
@@ -904,7 +975,7 @@ try {
     # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
     if (!$global:SkipOpamSetup) {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps bash -x '$DkmlPath\installtime\unix\init-opam-root.sh' dev"
+            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/bootstrap-apps bash -x '$DkmlPath\installtime\unix\init-opam-root.sh' dev"
     }
 
     # END opam init
@@ -919,7 +990,7 @@ try {
     # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
     if (!$global:SkipOpamSetup) {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\create-diskuv-boot-DO-NOT-DELETE-switch.sh'"
+            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/bootstrap-apps '$DkmlPath\installtime\unix\create-diskuv-boot-DO-NOT-DELETE-switch.sh'"
         }
 
     # END opam switch create diskuv-boot-DO-NOT-DELETE
@@ -934,7 +1005,7 @@ try {
     # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
     if (!$global:SkipOpamSetup) {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\create-opam-switch.sh' -s -b Release"
+            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/bootstrap-apps '$DkmlPath\installtime\unix\create-opam-switch.sh' -s -b Release"
     }
 
     # END opam switch create diskuv-system
@@ -952,12 +1023,39 @@ try {
     if (!$global:SkipOpamSetup) {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
             -Command (
-            "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\runtime\unix\platform-opam-exec' -s install --yes " +
+            "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/bootstrap-apps '$DkmlPath\runtime\unix\platform-opam-exec' -s install --yes " +
             "$($DistributionPackages -join ' ')"
         )
     }
 
     # END opam install required `diskuv-system` packages
+    # ----------------------------------------------------------------
+
+    # ----------------------------------------------------------------
+    # BEGIN compile and run bootstrap-apps
+
+    $global:ProgressActivity = "Compile and run bootstrap-apps"
+    Write-ProgressStep
+
+    $AppsBootstrapCachePath = "$TempPath\bootstrap-apps"
+    $PkgConfigPath = "$ProgramPath\lib\pkgconfig"
+
+    Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
+        -Command ("set -x && " +
+            "cd /opt/diskuv-ocaml/installtime/bootstrap-apps/ && " +
+            "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/bootstrap-apps '$DkmlPath\runtime\unix\platform-opam-exec' -s exec -- dune build --build-dir '$AppsBootstrapCachePath' @all")
+
+    # generate libffi.pc
+    if (!(Test-Path -Path $PkgConfigPath)) { New-Item -Path $PkgConfigPath -ItemType Directory | Out-Null }
+    Invoke-Win32CommandWithProgress -FilePath "$MSYS2Dir\usr\bin\env.exe" -ArgumentList @(
+        "PATH=/usr/bin" # pgrep needed by `feather` OCaml package
+        "$AppsBootstrapCachePath\default\dkml-templatizer\dkml_templatizer.exe"
+        "-o"
+        "$PkgConfigPath\libffi.pc"
+        "$DkmlPath\etc\pkgconfig\windows\libffi.pc"
+        )
+
+    # END compile and run bootstrap-apps
     # ----------------------------------------------------------------
 
     # ----------------------------------------------------------------
@@ -974,6 +1072,7 @@ try {
             "cd /opt/diskuv-ocaml/installtime/apps/ && " +
             "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\runtime\unix\platform-opam-exec' -s exec -- dune build --build-dir '$AppsCachePath' @all")
 
+    # Only apps, not bootstrap-apps, are installed
     if (!(Test-Path -Path $AppsBinDir)) { New-Item -Path $AppsBinDir -ItemType Directory | Out-Null }
     Copy-Item "$AppsCachePath\default\fswatch_on_inotifywin\fswatch.exe" -Destination $AppsBinDir
     Copy-Item "$AppsCachePath\default\findup\findup.exe" -Destination $AppsBinDir\dkml-findup.exe
@@ -1115,7 +1214,7 @@ catch {
     $ErrorActionPreference = 'Continue'
     Write-Error (
         "Setup did not complete because an error occurred.`n$_`n`n$($_.ScriptStackTrace)`n`n" +
-        "$AdditionalDiagnostics`n`nLogs files available at $AuditLog and $AuditCurrentLog")
+        "$AdditionalDiagnostics`n`nLog files available at`n  $AuditLog`n  $AuditCurrentLog`n  $AuditCurrentErr")
     exit 1
 }
 

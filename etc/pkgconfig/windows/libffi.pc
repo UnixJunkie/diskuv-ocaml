@@ -1,0 +1,14 @@
+# Same as MSYS2's libffi-devel at /usr/lib/pkgconfig/libffi.pc except:
+# - Sets the prefix variable to the mixed path (ex. C:/Users/User/AppData/.../DiskuvOCaml/...) of MSYS2's /usr
+# - Quotes the Libs and Cflags paths in case the variables have spaces
+prefix={{ DiskuvOCamlHome_Mixed }}/tools/MSYS2/usr
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+toolexeclibdir=${libdir}/../lib
+includedir=${prefix}/include
+
+Name: libffi
+Description: Library supporting Foreign Function Interfaces
+Version: 3.3
+Libs: '-L${toolexeclibdir}' -lffi
+Cflags: '-I${includedir}'

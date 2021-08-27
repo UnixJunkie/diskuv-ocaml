@@ -29,6 +29,7 @@ PINNED_PACKAGES=(
     "mirage-crypto-rng-mirage,0.10.4-windowssupport"
     "ocamlbuild,0.14.0"
     "core_kernel,v0.14.2"
+    "feather,0.3.0"
 )
 
 # ------------------

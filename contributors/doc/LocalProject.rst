@@ -254,8 +254,8 @@ Finished?
 
 *TODO* Missing a tool to make your own Local Project.
 
-Standard Layout
----------------
+Directory Layout
+----------------
 
 ``diskuv-ocaml-starter`` is an example of the standard layout which looks like:
 
@@ -272,6 +272,7 @@ Standard Layout
     │       └── Debug
     ├── buildconfig
     │   └── dune
+    │       ├── .gitignore
     │       ├── dune.env.workspace.inc
     │       ├── executable
     │       └── workspace
@@ -293,6 +294,113 @@ Standard Layout
         └── diskuv-ocaml
 
 *TODO* Explanation of each directory and file.
+
+``Makefile``
+~~~~~~~~~~~~
+
+Configuration
+^^^^^^^^^^^^^
+
+The *Diskuv OCaml* specific configuration for your local project is at the top of your
+``Makefile``.
+
+Here is an example from the ``diskuv-ocaml-starter`` local project:
+
+.. code-block:: make
+
+    #-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#
+    #                      RESERVED FOR DISKUV OCAML                        #
+    #                         BEGIN CONFIGURATION                           #
+    #                                                                       #
+    #     Place this section before the first target (typically 'all:')     #
+    #-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#
+
+    # The subdirectory for the 'diskuv-ocaml' git submodule
+    DKML_DIR = vendor/diskuv-ocaml
+
+    # Verbose tracing of each command. Either ON or OFF
+    DKML_BUILD_TRACE = OFF
+
+    # The names of the Opam packages (without the .opam suffix). No platform-specific packages belongs here.
+    OPAM_PKGS_CROSSPLATFORM = starter
+
+    # The source directories. No platform-specific source code belongs here.
+    OCAML_SRC_CROSSPLATFORM = bin lib
+
+    # The test directories. No platform-specific source code belongs here.
+    OCAML_TEST_CROSSPLATFORM = test
+
+    # The names of the Windows-specific Opam packages (without the .opam suffix), if any.
+    OPAM_PKGS_WINDOWS =
+
+    # The source directories containing Windows-only source code, if any.
+    OCAML_SRC_WINDOWS =
+
+    # The test directories for Windows source code, if any.
+    OCAML_TEST_WINDOWS =
+
+    #-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#
+    #                          END CONFIGURATION                            #
+    #                      RESERVED FOR DISKUV OCAML                        #
+    #-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#
+
+
+Targets
+^^^^^^^
+
+The *Diskuv OCaml* specific targets for your local project are at the bottom of your
+``Makefile``.
+
+Here is an example from the ``diskuv-ocaml-starter`` local project:
+
+.. code-block:: make
+
+    #-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#
+    #                      RESERVED FOR DISKUV OCAML                        #
+    #                            BEGIN TARGETS                              #
+    #                                                                       #
+    #         Place this section anywhere after the `all` target            #
+    #-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#
+
+    include $(DKML_DIR)/runtime/unix/standard.mk
+
+    #-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#
+    #                             END TARGETS                               #
+    #                      RESERVED FOR DISKUV OCAML                        #
+    #-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#
+
+``buildconfig/dune/``
+~~~~~~~~~~~~~~~~~~~~
+
+::
+
+    .
+    └── buildconfig
+        └── dune
+            ├── .gitignore
+            ├── dune.env.workspace.inc
+            ├── executable
+            │   ├── 1-base.link_flags.sexp
+            │   ├── 2-dev-all.link_flags.sexp
+            │   ├── 3-all-Debug.link_flags.sexp
+            │   ├── 3-all-Release.link_flags.sexp
+            │   ├── 3-all-ReleaseCompatFuzz.link_flags.sexp
+            │   ├── 3-all-ReleaseCompatPerf.link_flags.sexp
+            │   ├── 4-dev-Debug.link_flags.sexp
+            │   ├── 4-dev-Release.link_flags.sexp
+            │   ├── 4-dev-ReleaseCompatFuzz.link_flags.sexp
+            │   └── 4-dev-ReleaseCompatPerf.link_flags.sexp
+            └── workspace
+                ├── 1-base.ocamlopt_flags.sexp
+                ├── 2-dev-all.ocamlopt_flags.sexp
+                ├── 3-all-Debug.ocamlopt_flags.sexp
+                ├── 3-all-Release.ocamlopt_flags.sexp
+                ├── 3-all-ReleaseCompatFuzz.ocamlopt_flags.sexp
+                ├── 3-all-ReleaseCompatPerf.ocamlopt_flags.sexp
+                ├── 4-dev-Debug.ocamlopt_flags.sexp
+                ├── 4-dev-Release.ocamlopt_flags.sexp
+                ├── 4-dev-ReleaseCompatFuzz.ocamlopt_flags.sexp
+                └── 4-dev-ReleaseCompatPerf.ocamlopt_flags.sexp
 
 Setting Up An Existing Git Repository As a Local Project
 --------------------------------------------------------
