@@ -27,6 +27,7 @@ PINNED_PACKAGES=(
     "mirage-crypto-rng,0.10.4-windowssupport"
     "mirage-crypto-rng-async,0.10.4-windowssupport"
     "mirage-crypto-rng-mirage,0.10.4-windowssupport"
+    "ocamlbuild,0.14.0"
 )
 
 # ------------------
