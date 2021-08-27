@@ -40,7 +40,7 @@ dev-repo: "git+https://github.com/diskuv/mirage-crypto.git"
 url {
   src: "https://github.com/diskuv/mirage-crypto/archive/refs/tags/v0.10.4-windowssupport.tar.gz"
   checksum: [
-    "md5=e4e99ac416232e9c59cea53873e6eeb8"
-    "sha512=8132665655106d3197477a2f69fd2038cc213b3a6f2f038bfc75b498ed662b04702d5212448c4af442d5bd582f690a40e4ba726e6dbae7c328b0831a24b54484"
+    "md5=dbf4ad53c8dbfa45b8f3f4dac6f9e9c1"
+    "sha512=8b739d4261e33abd87350e0d29624d7b22434b234c3ec8b54dd503b1e7f6120b842118023103042dfbf56aebe80ac5d560752bd2c2b2729fe96e5d5f839dd95c"
   ]
 }
