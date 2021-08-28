@@ -38,18 +38,33 @@ cd "$TOPDIR"
 # From here onwards everything should be run using RELATIVE PATHS ...
 # >>>>>>>>>
 
-# Make a versioned opam-repositories
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# BEGIN         ON-DEMAND VERSIONED GLOBAL INSTALLS
 #
-# Q: Why aren't we using an HTTP(S) site? Yep, we could have done `opam admin index`
+# The user experience for Unix is that `./makeit build-dev` should just work.
+# Anything that is in DiskuvOCamlHome is really just for platforms like Windows
+# that must have pre-installed software (for Windows that is MSYS2 or we couldn't
+# even run this script).
+#
+# So ... try to do as much as possible in this section (or "ON-DEMAND OPAM ROOT INSTALLATIONS" below).
+
+# TODO: These implementation won't work in containers; needs a mount point for the opam repositories, and
+# an @@EXPAND_DKMLPARENTHOME@@ macro
+set_dkmlparenthomedir
+
+# Make versioned opam-repositories
+#
+# Q: Why is opam-repositories here rather than in DiskuvOCamlHome?
+# The opam-repositories are required for Unix, not just Windows.
+#
+# Q: Why aren't we using an HTTP(S) site?
+# Yep, we could have done `opam admin index`
 # and followed the https://opam.ocaml.org/doc/Manual.html#Repositories instructions.
 # It is not hard _but_ we want a) versioning of the repository to coincide with
 # the version of Diskuv OCaml and b) ability to
 # edit the repository for `AdvancedToolchain.rst` patching. We could have done
 # both with HTTP(S) but simpler is usually better.
-#
-# TODO: This implementation won't work in containers; needs a mount point for the opam repositories, and
-# an @@EXPAND_DKMLPARENTHOME@@ macro
-set_dkmlparenthomedir
+
 # shellcheck disable=SC2154
 install -d "$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version"
 RSYNC_OPTS=(-a); if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then RSYNC_OPTS+=(--progress); fi
@@ -70,6 +85,9 @@ fi
 if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
 rsync "${RSYNC_OPTS[@]}" "$DKMLDIR"/etc/opam-repositories/ "$OPAMREPOS_UNIX"
 set +x
+
+# END           ON-DEMAND VERSIONED GLOBAL INSTALLS
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # -----------------------
 # BEGIN opam init
@@ -159,3 +177,38 @@ fi
 
 # END opam init
 # -----------------------
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# BEGIN         ON-DEMAND OPAM ROOT INSTALLATIONS
+
+# We use the Opam plugin directory to hold our root-specific installations.
+# http://opam.ocaml.org/doc/Manual.html#opam-root
+
+# -----------------------
+
+# Make versioned package config
+#
+# Q: Why is pkg-config here rather than in DiskuvOCamlHome?
+#
+# PKG_CONFIG_PATH is an Opam environment value that is logically tied to an Opam root.
+# Each Opam root may belong to a different architecture, and PKG_CONFIG_PATH (especially
+# cflags) should be able to vary based on architecture.
+#
+# We are forced to set it with in each switch because `opam option setenv=` is only
+# available on the switch level (a limitation of Opam today), but the value is the same for
+# all switches in the same Opam root.
+
+PKGCONFIG_UNIX="$DKMLPLUGIN_BUILDHOST/pkgconfig/$dkml_root_version"
+# shellcheck disable=SC2154
+install -d "$PKGCONFIG_UNIX"
+if is_windows_build_machine; then
+    if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
+    if [[ ! -e "$PKGCONFIG_UNIX"/libffi.pc ]]; then
+        "$DiskuvOCamlHome"/tools/apps/dkml-templatizer.exe -o "$PKGCONFIG_UNIX"/libffi.pc.tmp "$DKMLDIR"/etc/pkgconfig/windows/libffi.pc
+        mv "$PKGCONFIG_UNIX"/libffi.pc.tmp "$PKGCONFIG_UNIX"/libffi.pc
+    fi
+    set +x
+fi
+
+# END           ON-DEMAND OPAM ROOT INSTALLATIONS
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

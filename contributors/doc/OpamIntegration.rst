@@ -32,6 +32,17 @@ that has no MinGW patches.
 The ``default`` repository is the central Opam repository. Most of your packages are unpatched and
 will come directly from this repository.
 
+opam root
+---------
+
+Each `Opam root <http://opam.ocaml.org/doc/Manual.html#opam-root>`_ created by *Diskuv OCaml* includes
+a plugin directory ``OPAMROOT/plugins/diskuvocaml/``.
+
+For Unix systems it is empty.
+
+For Windows systems it contains `pkg-config <https://en.wikipedia.org/wiki/Pkg-config>`_
+necessary for a few OCaml packages with C bindings.
+
 Global Variables
 ----------------
 

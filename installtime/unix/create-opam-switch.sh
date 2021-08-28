@@ -249,6 +249,26 @@ fi
 # --------------------------------
 
 # --------------------------------
+# BEGIN opam option
+
+if is_windows_build_machine; then
+    # Opam environment update variables treat backslashes as escapes. And MSYS2 https://packages.msys2.org/base/pkgconf (which
+    # is slightly different from GNU's pkg-config) does not recognize mixed paths like C:/x/y/z. So use real, escaped Windows path.
+    PKG_CONFIG_PATH_ADD=$(echo "$DKMLPLUGIN_BUILDHOST\\pkgconfig\\$dkml_root_version" | sed 's/\\/\\\\/g')
+else
+    PKG_CONFIG_PATH_ADD="$DKMLPLUGIN_BUILDHOST/pkgconfig/$dkml_root_version"
+fi
+
+# http://opam.ocaml.org/doc/Manual.html#Environment-updates
+# `+=` prepends to the environment variable without adding a path separator (`;` or `:`) at the end if empty
+"$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" \
+    option --switch "$OPAMSWITCHDIR_EXPAND" \
+    setenv="PKG_CONFIG_PATH += \"$PKG_CONFIG_PATH_ADD\""
+
+# END opam option
+# --------------------------------
+
+# --------------------------------
 # BEGIN opam pin add
 
 # Create: pin.sh "$OPAMROOTDIR_EXPAND" "$OPAMSWITCHDIR_EXPAND"

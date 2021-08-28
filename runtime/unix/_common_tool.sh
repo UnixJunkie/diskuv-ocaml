@@ -307,9 +307,11 @@ function set_dkmlparenthomedir () {
 # - env:DiskuvOCamlBinaryPaths - optional
 # Outputs:
 # - env:DKMLPARENTHOME
-# - env:DiskuvOCamlVarsVersion
-# - env:DiskuvOCamlHome
-# - env:DiskuvOCamlBinaryPaths
+# - env:DiskuvOCamlVarsVersion - set if DiskuvOCaml installed
+# - env:DiskuvOCamlHome - set if DiskuvOCaml installed
+# - env:DiskuvOCamlBinaryPaths - set if DiskuvOCaml installed
+# Exit Code:
+# - 1 if DiskuvOCaml is not installed
 function autodetect_dkmlvars () {
     local DiskuvOCamlVarsVersion_Override=${DiskuvOCamlVarsVersion:-}
     local DiskuvOCamlHome_Override=${DiskuvOCamlHome:-}
@@ -456,26 +458,40 @@ function autodetect_vcvars () {
 #     build machine (not from within a container)
 # - env:OPAMROOTDIR_EXPAND - The path to the Opam root directory switch that works as an
 #     argument to `exec_in_platform`
+# - env:DKMLPLUGIN_BUILDHOST - Plugin directory for config/installations connected to the Opam root
+# - env:DKMLPLUGIN_EXPAND - The plugin directory that works as an argument to `exec_in_platform`
 function set_opamrootdir () {
     if is_dev_platform; then
-        if [[ -n "${OPAMROOT:-}" ]]; then
-            # If the developer sets OPAMROOT with an environment variable, then we will respect that
-            # just like `opam` would do.
-            OPAMROOTDIR_BUILDHOST="$OPAMROOT"
-        elif is_windows_build_machine; then
-            # Windows does not have a non-deprecated working Opam solution, so we go with our choice in
-            # build-sandbox-init.sh to have $USERPROFILE/.opam be the Opam root for the dev platform
-            OPAMROOTDIR_BUILDHOST="${USERPROFILE}\\.opam"
+        if is_windows_build_machine; then
+            if [[ -n "${OPAMROOT:-}" ]]; then
+                # If the developer sets OPAMROOT with an environment variable, then we will respect that
+                # just like `opam` would do.
+                OPAMROOTDIR_BUILDHOST="$OPAMROOT"
+            else
+                # Windows does not have a non-deprecated working Opam solution, so we go with our choice in
+                # build-sandbox-init.sh to have $USERPROFILE/.opam be the Opam root for the dev platform
+                OPAMROOTDIR_BUILDHOST="${USERPROFILE}\\.opam"
+            fi
+            DKMLPLUGIN_BUILDHOST="$OPAMROOTDIR_BUILDHOST\\plugins\\diskuvocaml"
         else
-            OPAMROOTDIR_BUILDHOST="${HOME}/.opam"
+            if [[ -n "${OPAMROOT:-}" ]]; then
+                OPAMROOTDIR_BUILDHOST="$OPAMROOT"
+            else
+                OPAMROOTDIR_BUILDHOST="${HOME}/.opam"
+            fi
+            DKMLPLUGIN_BUILDHOST="$OPAMROOTDIR_BUILDHOST/plugins/diskuvocaml"
         fi
         OPAMROOTDIR_EXPAND="$OPAMROOTDIR_BUILDHOST"
     else
         # In a reproducible container ...
         OPAMROOTDIR_BUILDHOST="$OPAMROOT_IN_CONTAINER"
         # shellcheck disable=SC2034
+        DKMLPLUGIN_BUILDHOST="$OPAMROOTDIR_BUILDHOST/plugins/diskuvocaml"
+        # shellcheck disable=SC2034
         OPAMROOTDIR_EXPAND="@@EXPAND_TOPDIR@@/$OPAMROOTDIR_BUILDHOST"
     fi
+    # shellcheck disable=SC2034
+    DKMLPLUGIN_EXPAND="$OPAMROOTDIR_EXPAND/plugins/diskuvocaml"
 }
 
 # Select the 'diskuv-system' switch.

@@ -127,7 +127,7 @@ if (!$global:Skip64BitCheck -and ![Environment]::Is64BitOperatingSystem) {
 
 $global:ProgressStep = 0
 $global:ProgressActivity = $null
-$ProgressTotalSteps = 18
+$ProgressTotalSteps = 17
 $ProgressId = $ParentProgressId + 1
 $global:ProgressStatus = $null
 
@@ -860,7 +860,7 @@ try {
         Invoke-CygwinCommandWithProgress `
             -CygwinName "ocaml-opam/mingw-amd64" `
             -CygwinDir "$OcamlOpamRootPath\mingw-amd64\cygwin64" `
-            -Command "env TOPDIR=/opt/diskuv-ocaml/installtime/bootstrap-apps /opt/diskuv-ocaml/installtime/compile-native-opam.sh '$Dkml_OcamlOpamCygwinAbsPath' $AvailableOpamVersion '$OpamBootstrap_OcamlOpamCygwinAbsPath' '$ProgramToolOpam_OcamlOpamCygwinAbsPath'"
+            -Command "env TOPDIR=/opt/diskuv-ocaml/installtime/apps /opt/diskuv-ocaml/installtime/compile-native-opam.sh '$Dkml_OcamlOpamCygwinAbsPath' $AvailableOpamVersion '$OpamBootstrap_OcamlOpamCygwinAbsPath' '$ProgramToolOpam_OcamlOpamCygwinAbsPath'"
 
         # Install it in the final location. Do a tiny safety check and only install from a whitelist of file extensions.
         Write-Progress -Activity "$DeploymentMark $ProgressActivity" -Status "Installing opam.exe"
@@ -975,7 +975,7 @@ try {
     # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
     if (!$global:SkipOpamSetup) {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/bootstrap-apps bash -x '$DkmlPath\installtime\unix\init-opam-root.sh' dev"
+            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps bash -x '$DkmlPath\installtime\unix\init-opam-root.sh' dev"
     }
 
     # END opam init
@@ -990,7 +990,7 @@ try {
     # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
     if (!$global:SkipOpamSetup) {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/bootstrap-apps '$DkmlPath\installtime\unix\create-diskuv-boot-DO-NOT-DELETE-switch.sh'"
+            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\create-diskuv-boot-DO-NOT-DELETE-switch.sh'"
         }
 
     # END opam switch create diskuv-boot-DO-NOT-DELETE
@@ -1005,7 +1005,7 @@ try {
     # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
     if (!$global:SkipOpamSetup) {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/bootstrap-apps '$DkmlPath\installtime\unix\create-opam-switch.sh' -s -b Release"
+            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\create-opam-switch.sh' -s -b Release"
     }
 
     # END opam switch create diskuv-system
@@ -1023,39 +1023,12 @@ try {
     if (!$global:SkipOpamSetup) {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
             -Command (
-            "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/bootstrap-apps '$DkmlPath\runtime\unix\platform-opam-exec' -s install --yes " +
+            "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\runtime\unix\platform-opam-exec' -s install --yes " +
             "$($DistributionPackages -join ' ')"
         )
     }
 
     # END opam install required `diskuv-system` packages
-    # ----------------------------------------------------------------
-
-    # ----------------------------------------------------------------
-    # BEGIN compile and run bootstrap-apps
-
-    $global:ProgressActivity = "Compile and run bootstrap-apps"
-    Write-ProgressStep
-
-    $AppsBootstrapCachePath = "$TempPath\bootstrap-apps"
-    $PkgConfigPath = "$ProgramPath\lib\pkgconfig"
-
-    Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-        -Command ("set -x && " +
-            "cd /opt/diskuv-ocaml/installtime/bootstrap-apps/ && " +
-            "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/bootstrap-apps '$DkmlPath\runtime\unix\platform-opam-exec' -s exec -- dune build --build-dir '$AppsBootstrapCachePath' @all")
-
-    # generate libffi.pc
-    if (!(Test-Path -Path $PkgConfigPath)) { New-Item -Path $PkgConfigPath -ItemType Directory | Out-Null }
-    Invoke-Win32CommandWithProgress -FilePath "$MSYS2Dir\usr\bin\env.exe" -ArgumentList @(
-        "PATH=/usr/bin" # pgrep needed by `feather` OCaml package
-        "$AppsBootstrapCachePath\default\dkml-templatizer\dkml_templatizer.exe"
-        "-o"
-        "$PkgConfigPath\libffi.pc"
-        "$DkmlPath\etc\pkgconfig\windows\libffi.pc"
-        )
-
-    # END compile and run bootstrap-apps
     # ----------------------------------------------------------------
 
     # ----------------------------------------------------------------
@@ -1076,6 +1049,7 @@ try {
     if (!(Test-Path -Path $AppsBinDir)) { New-Item -Path $AppsBinDir -ItemType Directory | Out-Null }
     Copy-Item "$AppsCachePath\default\fswatch_on_inotifywin\fswatch.exe" -Destination $AppsBinDir
     Copy-Item "$AppsCachePath\default\findup\findup.exe" -Destination $AppsBinDir\dkml-findup.exe
+    Copy-Item "$AppsCachePath\default\dkml-templatizer\dkml_templatizer.exe" -Destination $AppsBinDir\dkml-templatizer.exe
 
     # END compile apps
     # ----------------------------------------------------------------
