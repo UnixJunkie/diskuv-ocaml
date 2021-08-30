@@ -469,8 +469,8 @@ function set_opamrootdir () {
                 OPAMROOTDIR_BUILDHOST="$OPAMROOT"
             else
                 # Windows does not have a non-deprecated working Opam solution, so we go with our choice in
-                # build-sandbox-init.sh to have $USERPROFILE/.opam be the Opam root for the dev platform
-                OPAMROOTDIR_BUILDHOST="${USERPROFILE}\\.opam"
+                # build-sandbox-init.sh to have $LOCALAPPDATA/.opam be the Opam root for the dev platform
+                OPAMROOTDIR_BUILDHOST="${LOCALAPPDATA}\\.opam"
             fi
             DKMLPLUGIN_BUILDHOST="$OPAMROOTDIR_BUILDHOST\\plugins\\diskuvocaml"
         else

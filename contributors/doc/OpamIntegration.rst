@@ -72,6 +72,13 @@ The global variables that will be present in a Diskuv OCaml installation are:
     sys-ocaml-libc    msvc                                                       # Host C Runtime Library type of the OCaml compiler present on your system
     sys-ocaml-version 4.12.0                                                     # OCaml version present on your system independently of opam, if any
 
+.. note::
+
+    Stay tuned; we need a consult with the Opam team to figure out what to put into ``os-distribution`` (``msys2`` or ``diskuvocaml``?).
+    Apparently ``cygwinports`` is a thing and used a filter in
+    `ctypes-foreign <https://github.com/ocamllabs/ocaml-ctypes/blob/261fe071fad17ab323d8d2b82df2aec593e64e3f/ctypes-foreign.opam#L13>`_.
+    Something similar may be good for you.
+
 Working with Native Windows
 ---------------------------
 
@@ -86,7 +93,7 @@ complete POSIX environment. You may need a few tweaks including but not limited 
 
 * translating Windows paths into Unix paths (usually only a problem if you are using absolute paths)
 * use Windows libraries rather than Unix libraries
-* use ``USERPROFILE`` rather than ``HOME`` to locate the user's home directory
+* use ``LOCALAPPDATA`` rather than ``HOME`` to locate the user's home directory
 
 Typically you will customize your package build behavior with either
 `Opam Filters <https://opam.ocaml.org/doc/Manual.html#Filters>`_ (the topic of this section)

@@ -3,7 +3,7 @@
 # init-opam-root.sh PLATFORM
 #
 # Purpose:
-# 1. Install an OPAMROOT (`opam init`) in $env:USERPROFILE/.opam or
+# 1. Install an OPAMROOT (`opam init`) in $env:LOCALAPPDATA/.opam or
 #    the PLATFORM's opam-root/ folder.
 # 2. Especially for Windows, optionally install a working
 #    global Opam switch.
@@ -65,7 +65,6 @@ set_dkmlparenthomedir
 # edit the repository for `AdvancedToolchain.rst` patching. We could have done
 # both with HTTP(S) but simpler is usually better.
 
-# shellcheck disable=SC2154
 install -d "$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version"
 RSYNC_OPTS=(-a); if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then RSYNC_OPTS+=(--progress); fi
 if is_windows_build_machine; then
@@ -93,7 +92,7 @@ set +x
 # BEGIN opam init
 
 # Windows does not have a non-deprecated working Opam solution, so we choose
-# to have $USERPROFILE/.opam be the Opam root for the dev platform. That is
+# to have $LOCALAPPDATA/.opam be the Opam root for the dev platform. That is
 # aligned with ~/.opam for Unix-y Opam. For Windows we also don't have a
 # package manager that comes with `opam` pre-compiled, so we bootstrap an
 # Opam installation from our Moby Docker downloaded of ocaml/opam image
@@ -107,7 +106,7 @@ set_opamrootdir
 # --disable-sandboxing: Can't nest Opam sandboxes inside of our Build Sandbox because nested chroots are not supported
 # --no-setup: Don't modify user shell configuration (ex. ~/.profile). The home directory inside the Docker container
 #             is not persistent anyways, so anything else would be useless.
-OPAM_INIT_ARGS=(--disable-sandboxing --no-setup)
+OPAM_INIT_ARGS=(--yes --disable-sandboxing --no-setup)
 REPONAME_PENDINGREMOVAL=pendingremoval-opam-repo
 if is_windows_build_machine; then
     # For Windows we set `opam init --bare` so we can configure its settings before adding the OCaml system compiler.

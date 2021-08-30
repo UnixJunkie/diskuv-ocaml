@@ -251,7 +251,7 @@ $GitPath = (get-item "$GitExe").Directory.FullName
 
 # Magic constants that will identify new and existing deployments:
 # * Immutable git tags
-$AvailableOpamVersion = "2.1.0.msys2.4" # needs to be a real Opam tag in https://github.com/diskuv/opam!
+$AvailableOpamVersion = "2.1.0.msys2.5" # needs to be a real Opam tag in https://github.com/diskuv/opam!
 $NinjaVersion = "1.10.2"
 $CMakeVersion = "3.21.1"
 # https://hub.docker.com/layers/ocaml/opam/windows-msvc-20H2-ocaml-4.12/images/sha256-e7b6e08cf22f6caed6599f801fbafbc32a93545e864b83ab42aedbd0d5835b55?context=explore
@@ -340,6 +340,12 @@ $MSYS2Packages = @(
     # ----
 
     "procps", # provides `pgrep`
+
+    # ----
+    # Needed by OCaml package `conf-ncurses` used by `opam install ctypes --with-test`
+    # ----
+
+    "ncurses-devel",
 
     # ----
     # Needed by OCaml package `ctypes`
@@ -573,7 +579,9 @@ function Invoke-MSYS2CommandWithProgress {
         [Parameter(Mandatory=$true)]
         $Command,
         [Parameter(Mandatory=$true)]
-        $MSYS2Dir
+        $MSYS2Dir,
+        [switch]
+        $ClearProgress
     )
     # Add Git to path
     $GitMSYS2AbsPath = & $MSYS2Dir\usr\bin\cygpath.exe -au "$GitPath"
@@ -583,7 +591,12 @@ function Invoke-MSYS2CommandWithProgress {
     $what = "[MSYS2] $Command"
     Add-Content -Path $AuditLog -Value "$(Get-CurrentTimestamp) $what"
 
-    if (!$global:SkipProgress) {
+    if ($ClearProgress) {
+        if (!$global:SkipProgress) {
+            Write-Progress -Id $ProgressId -ParentId $ParentProgressId -Activity $global:ProgressActivity -Completed
+        }
+        Invoke-MSYS2Command -Command $Command -MSYS2Dir $MSYS2Dir
+    } elseif (!$global:SkipProgress -and !$ClearProgress) {
         $global:ProgressStatus = $what
         Write-Progress -Id $ProgressId `
             -ParentId $ParentProgressId `
@@ -799,8 +812,8 @@ try {
     # Note: You may be tempted to use the bundled BuildTools/ rather than ask the user to install MSBuild (see BUILDING-Windows.md).
     #       But that is dangerous because Microsoft can and likely does but hardcoded paths and system information into that directory.
     #       Definitely not worth the insane troubleshooting that would ensue.
-    Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "bash -x /opt/diskuv-ocaml/installtime/moby-extract-opam-root.sh '$MobyCygwinAbsPath' '$WindowsMsvcDockerImage' amd64 msvc '$OcamlOpamRootCygwinAbsPath'"
-    Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "bash -x /opt/diskuv-ocaml/installtime/moby-extract-opam-root.sh '$MobyCygwinAbsPath' '$WindowsMinGWDockerImage' amd64 mingw '$OcamlOpamRootCygwinAbsPath'"
+    Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "/opt/diskuv-ocaml/installtime/moby-extract-opam-root.sh '$MobyCygwinAbsPath' '$WindowsMsvcDockerImage' amd64 msvc '$OcamlOpamRootCygwinAbsPath'"
+    Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "/opt/diskuv-ocaml/installtime/moby-extract-opam-root.sh '$MobyCygwinAbsPath' '$WindowsMinGWDockerImage' amd64 mingw '$OcamlOpamRootCygwinAbsPath'"
 
     foreach ($portAndArch in "msvc-amd64", "mingw-amd64") {
         $AdditionalDiagnostics += "[Advanced] Cygwin commands for Docker $portAndArch image 'ocaml/opam' can be run with: $OcamlOpamRootPath\$portAndArch\cygwin64\bin\mintty.exe -`n"
@@ -849,26 +862,23 @@ try {
     $ProgramToolOpamDir = "$ProgramPath\$ProgramRelToolDir"
     $OpamBootstrapDir = "$TempPath\opam-bootstrap"
 
-    # If the opam.exe already exists in the User Profile, we don't reinstall it.
-    if (!(Test-Path -Path $ProgramToolOpamDir\opam.exe)) {
-        # Compile native Windows OPAM.EXE with ocaml/opam's mingw-amd64 Cygwin.
-        # * We do not do `make install` since only OPAM.EXE builds and we don't care about any other Opam artifacts (which we can copy from ocaml/opam)
-        # * We configure OPAM.EXE during compilation to use $ProgramToolOpamDir as the hardcoded install location.
-        $Dkml_OcamlOpamCygwinAbsPath = & "$OcamlOpamRootPath\mingw-amd64\cygwin64\bin\cygpath.exe" -au "$DkmlPath"
-        $ProgramToolOpam_OcamlOpamCygwinAbsPath = & "$OcamlOpamRootPath\mingw-amd64\cygwin64\bin\cygpath.exe" -au "$ProgramToolOpamDir"
-        $OpamBootstrap_OcamlOpamCygwinAbsPath = & "$OcamlOpamRootPath\mingw-amd64\cygwin64\bin\cygpath.exe" -au "$OpamBootstrapDir"
-        Invoke-CygwinCommandWithProgress `
-            -CygwinName "ocaml-opam/mingw-amd64" `
-            -CygwinDir "$OcamlOpamRootPath\mingw-amd64\cygwin64" `
-            -Command "env TOPDIR=/opt/diskuv-ocaml/installtime/apps /opt/diskuv-ocaml/installtime/compile-native-opam.sh '$Dkml_OcamlOpamCygwinAbsPath' $AvailableOpamVersion '$OpamBootstrap_OcamlOpamCygwinAbsPath' '$ProgramToolOpam_OcamlOpamCygwinAbsPath'"
+    # Compile native Windows OPAM.EXE with ocaml/opam's mingw-amd64 Cygwin.
+    # * We do not do `make install` since only OPAM.EXE builds and we don't care about any other Opam artifacts (which we can copy from ocaml/opam)
+    # * We configure OPAM.EXE during compilation to use $ProgramToolOpamDir as the hardcoded install location.
+    $Dkml_OcamlOpamCygwinAbsPath = & "$OcamlOpamRootPath\mingw-amd64\cygwin64\bin\cygpath.exe" -au "$DkmlPath"
+    $ProgramToolOpam_OcamlOpamCygwinAbsPath = & "$OcamlOpamRootPath\mingw-amd64\cygwin64\bin\cygpath.exe" -au "$ProgramToolOpamDir"
+    $OpamBootstrap_OcamlOpamCygwinAbsPath = & "$OcamlOpamRootPath\mingw-amd64\cygwin64\bin\cygpath.exe" -au "$OpamBootstrapDir"
+    Invoke-CygwinCommandWithProgress `
+        -CygwinName "ocaml-opam/mingw-amd64" `
+        -CygwinDir "$OcamlOpamRootPath\mingw-amd64\cygwin64" `
+        -Command "env TOPDIR=/opt/diskuv-ocaml/installtime/apps /opt/diskuv-ocaml/installtime/compile-native-opam.sh '$Dkml_OcamlOpamCygwinAbsPath' $AvailableOpamVersion '$OpamBootstrap_OcamlOpamCygwinAbsPath' '$ProgramToolOpam_OcamlOpamCygwinAbsPath'"
 
-        # Install it in the final location. Do a tiny safety check and only install from a whitelist of file extensions.
-        Write-Progress -Activity "$DeploymentMark $ProgressActivity" -Status "Installing opam.exe"
-        if (!(Test-Path -Path $ProgramToolOpamDir)) { New-Item -Path $ProgramToolOpamDir -ItemType Directory | Out-Null }
-        Copy-Item -Path "$OpamBootstrapDir\bin\*" `
-            -Include @("*.dll", "*.exe", "*.manifest") `
-            -Destination $ProgramToolOpamDir
-    }
+    # Install it in the final location. Do a tiny safety check and only install from a whitelist of file extensions.
+    Write-Progress -Activity "$DeploymentMark $ProgressActivity" -Status "Installing opam.exe"
+    if (!(Test-Path -Path $ProgramToolOpamDir)) { New-Item -Path $ProgramToolOpamDir -ItemType Directory | Out-Null }
+    Copy-Item -Path "$OpamBootstrapDir\bin\*" `
+        -Include @("*.dll", "*.exe", "*.manifest") `
+        -Destination $ProgramToolOpamDir
 
 
     # END Recompile and install opam.exe
@@ -972,10 +982,15 @@ try {
     $global:ProgressActivity = "Initialize Opam Package Manager"
     Write-ProgressStep
 
+    # Upgrades. Possibly ask questions to delete thins, so no progress indicator
+    Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
+        -ClearProgress `
+        -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\deinit-opam-root.sh' dev"
+
     # Skip with ... $global:SkipOpamSetup = $true ... remove it with ... Remove-Variable SkipOpamSetup
     if (!$global:SkipOpamSetup) {
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps bash -x '$DkmlPath\installtime\unix\init-opam-root.sh' dev"
+            -Command "env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps '$DkmlPath\installtime\unix\init-opam-root.sh' dev"
     }
 
     # END opam init
@@ -1093,7 +1108,7 @@ try {
     $global:ProgressActivity = "Remove extended ACLs"
     Write-ProgressStep
 
-    $DiskuvBootCygwinAbsPath = & $CygwinRootPath\bin\cygpath.exe -au "$env:USERPROFILE\.opam\diskuv-boot-DO-NOT-DELETE"
+    $DiskuvBootCygwinAbsPath = & $CygwinRootPath\bin\cygpath.exe -au "$env:LOCALAPPDATA\.opam\diskuv-boot-DO-NOT-DELETE"
     Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "find '$DiskuvBootCygwinAbsPath' -print0 | xargs -0 --no-run-if-empty setfacl --remove-all --remove-default"
 
     $ProgramCygwinAbsPath = & $CygwinRootPath\bin\cygpath.exe -au "$ProgramPath"
