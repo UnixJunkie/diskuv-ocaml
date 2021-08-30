@@ -86,7 +86,6 @@ ENV_ARGS=(
 )
 
 # give builds access to tools
-ENV_PATH_FULL=
 ENV_PATH_PREFIX="$TOPDIR/$TOOLSDIR/local/bin"
 ENV_PATH_SUFFIX=
 
@@ -114,8 +113,7 @@ if [[ -n "${DiskuvOCamlBinaryPaths:-}" ]]; then
 fi
 
 # Autodetect VCVARS on Windows; do nothing on Unix.
-# `autodetect_vcvars` does tricky things with ENV_PATH_PREFIX and
-# ENV_PATH_FULL, so we populate set PATH immediately. The PATH will
+# Populate PATH immediately. The PATH will
 # be available for the prehooks (if any), so we do not use ENV_ARGS
 # for the PATH.
 if [[ "$COMPILATION" = ON ]]; then
@@ -127,11 +125,7 @@ if [[ "$COMPILATION" = ON ]]; then
         echo "FATAL: Did not detect Diskuv OCaml's Visual Studio Build Tools installation"
         exit 1
     fi
-    if [[ -n "${ENV_PATH_FULL:-}" ]]; then
-        PATH="$ENV_PATH_FULL$ENV_PATH_SUFFIX:/usr/bin:/bin"
-    else
-        PATH="$ENV_PATH_PREFIX:$PATH$ENV_PATH_SUFFIX:/usr/bin:/bin"
-    fi
+    PATH="$ENV_PATH_PREFIX:$VCVARS_PATH$ENV_PATH_SUFFIX:/usr/bin:/bin"
 fi
 
 # run any prehooks (the PATH has already been setup)

@@ -81,18 +81,6 @@ KERNEL_linux_arm32v7    = linux
 KERNEL_linux_arm64      = linux
 KERNEL_linux_x86_64     = linux
 KERNEL_windows_x86_64   = windows
-# VCVARS_xxPLATFORMxx_ := See https://docs.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-160
-VCVARS_android_arm64v8a = $(NOTAPPLICABLE)
-VCVARS_android_arm32v7a = $(NOTAPPLICABLE)
-VCVARS_android_x86      = $(NOTAPPLICABLE)
-VCVARS_android_x86_64   = $(NOTAPPLICABLE)
-VCVARS_darwin_arm64     = $(NOTAPPLICABLE)
-VCVARS_darwin_x86_64    = $(NOTAPPLICABLE)
-VCVARS_linux_arm32v6    = $(NOTAPPLICABLE)
-VCVARS_linux_arm32v7    = $(NOTAPPLICABLE)
-VCVARS_linux_arm64      = $(NOTAPPLICABLE)
-VCVARS_linux_x86_64     = $(NOTAPPLICABLE)
-VCVARS_windows_x86_64   = vcvars64.bat
 # ANDROID_ABI_xxPLATFORMxx_ := See https://developer.android.com/ndk/guides/abis#sa
 ANDROID_ABI_android_arm64v8a = arm64-v8a
 ANDROID_ABI_android_arm32v7a = armeabi-v7a
@@ -487,32 +475,6 @@ $(foreach option,$(DUNE_EXECUTABLE_OVERRIDE_OPTIONS),$(foreach platform,dev $(DK
 buildconfig/dune/dune.env.executable: $(foreach option,$(DUNE_EXECUTABLE_OVERRIDE_OPTIONS),$(foreach platform,dev $(DKML_PLATFORMS),$(foreach buildtype,$(DKML_BUILDTYPES), buildconfig/dune/executable/4-$(platform)-$(buildtype).$(option).sexp )))
 
 # -----------------------------------------------------------------------------
-
-.PHONY: show-vcvars-dev
-show-vcvars-dev:
-	@if [ "$$MSYSTEM" = MSYS ] || [ -e /usr/bin/cygpath ]; then \
-		if [ `/usr/bin/uname -m` = x86_64 ]; then v=vcvars64; else v=vcvar32; fi; \
-	else \
-		v=$(NOTAPPLICABLE); \
-	fi && \
-	if [ -z "$(OUT_VCVARS_BAT)" ]; then \
-		echo $$v; \
-	else \
-		echo $$v > "$(OUT_VCVARS_BAT)"; \
-	fi
-
-define SHOW_VCVARS_platform_template =
-  .PHONY: show-vcvars-$(1)
-  show-vcvars-$(1):
-	@if [ -z "$(OUT_VCVARS_BAT)" ]; then \
-		echo $$(VCVARS_$(1)); \
-	else \
-		echo $$(VCVARS_$(1)) > "$(OUT_VCVARS_BAT)"; \
-	fi
-endef
-$(foreach platform,$(DKML_PLATFORMS),$(eval $(call SHOW_VCVARS_platform_template,$(platform))))
-
-# ------------------------------------------------------------
 
 .PHONY: dkml-report
 dkml-report: buildconfig/dune
