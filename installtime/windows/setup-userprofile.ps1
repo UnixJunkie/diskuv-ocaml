@@ -254,6 +254,7 @@ $GitPath = (get-item "$GitExe").Directory.FullName
 $AvailableOpamVersion = "2.1.0.msys2.5" # needs to be a real Opam tag in https://github.com/diskuv/opam!
 $NinjaVersion = "1.10.2"
 $CMakeVersion = "3.21.1"
+$LibffiVersion = "3.4.2"
 # https://hub.docker.com/layers/ocaml/opam/windows-msvc-20H2-ocaml-4.12/images/sha256-e7b6e08cf22f6caed6599f801fbafbc32a93545e864b83ab42aedbd0d5835b55?context=explore
 # https://hub.docker.com/layers/ocaml/opam/windows-mingw-20H2-ocaml-4.12/images/sha256-41e095132878dd6a517408cfd47647e522da6c76a67f421931115a586131119f?context=explore
 $WindowsMsvcDockerImage = "ocaml/opam:windows-msvc-20H2-ocaml-4.12@sha256:e7b6e08cf22f6caed6599f801fbafbc32a93545e864b83ab42aedbd0d5835b55"
@@ -346,12 +347,6 @@ $MSYS2Packages = @(
     # ----
 
     "ncurses-devel",
-
-    # ----
-    # Needed by OCaml package `ctypes`
-    # ----
-
-    "libffi-devel",
 
     # ----
     # Needed for our own sanity!
@@ -581,7 +576,9 @@ function Invoke-MSYS2CommandWithProgress {
         [Parameter(Mandatory=$true)]
         $MSYS2Dir,
         [switch]
-        $ClearProgress
+        $ClearProgress,
+        [switch]
+        $IgnoreErrors
     )
     # Add Git to path
     $GitMSYS2AbsPath = & $MSYS2Dir\usr\bin\cygpath.exe -au "$GitPath"
@@ -595,7 +592,7 @@ function Invoke-MSYS2CommandWithProgress {
         if (!$global:SkipProgress) {
             Write-Progress -Id $ProgressId -ParentId $ParentProgressId -Activity $global:ProgressActivity -Completed
         }
-        Invoke-MSYS2Command -Command $Command -MSYS2Dir $MSYS2Dir
+        Invoke-MSYS2Command -Command $Command -MSYS2Dir $MSYS2Dir -IgnoreErrors:$IgnoreErrors
     } elseif (!$global:SkipProgress -and !$ClearProgress) {
         $global:ProgressStatus = $what
         Write-Progress -Id $ProgressId `
@@ -606,6 +603,7 @@ function Invoke-MSYS2CommandWithProgress {
             -PercentComplete (100 * ($global:ProgressStep / $ProgressTotalSteps))
         Invoke-MSYS2Command -Command $Command -MSYS2Dir $MSYS2Dir `
             -RedirectStandardOutput $AuditCurrentLog -RedirectStandardError $AuditCurrentErr `
+            -IgnoreErrors:$IgnoreErrors `
             -TailFunction ${function:\Write-ProgressCurrentOperation}
     } else {
         Invoke-MSYS2Command -Command $Command -MSYS2Dir $MSYS2Dir `
@@ -934,8 +932,18 @@ try {
         # Pacman does not update individual packages but rather the full system is upgraded. We _must_
         # upgrade the system before installing packages. Confer:
         # https://wiki.archlinux.org/title/System_maintenance#Partial_upgrades_are_unsupported
+        # One more edge case ...
+        #   :: Processing package changes...
+        #   upgrading msys2-runtime...
+        #   upgrading pacman...
+        #   :: To complete this update all MSYS2 processes including this terminal will be closed. Confirm to proceed [Y/n] SUCCESS: The process with PID XXXXX has been terminated.
+        # ... when pacman decides to upgrade itself, it kills all the MSYS2 processes. So we need to run at least
+        # once and ignore any errors from forcible termination.
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
             -Command ("pacman -Syu --noconfirm")
+        Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
+            -Command ("pacman -Syu --noconfirm")
+
         # Install new packages and/or full system if any were not installed ("--needed")
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
             -Command ("pacman -S --needed --noconfirm " + ($MSYS2PackagesArch -join " "))
@@ -974,6 +982,27 @@ try {
 "@
 
     # END Define dkmlvars
+    # ----------------------------------------------------------------
+
+    # ----------------------------------------------------------------
+    # BEGIN Native Windows libffi
+
+    $global:ProgressActivity = "Compile Native Windows libffi"
+    Write-ProgressStep
+
+    $ProgramRelToolDir = "tools\libffi"
+    $ProgramToolLibffiDir = "$ProgramPath\$ProgramRelToolDir"
+    $LibffiWorkDir = "$TempPath\libffi-bootstrap"
+
+    $ProgramToolLibffiMSYS2AbsPath = & $MSYS2Dir\usr\bin\cygpath.exe -au "$ProgramToolLibffiDir"
+    $LibffiWorkMSYS2AbsPath = & $MSYS2Dir\usr\bin\cygpath.exe -au "$LibffiWorkDir"
+
+    Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
+        -Command ("env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps " +
+            "'$DkmlPath\installtime\msys2\compile-native-libffi.sh' '$DkmlPath' '$LibffiVersion' " +
+            "'$LibffiWorkMSYS2AbsPath' '$ProgramToolLibffiMSYS2AbsPath'")
+
+    # END Native Windows libffi
     # ----------------------------------------------------------------
 
     # ----------------------------------------------------------------

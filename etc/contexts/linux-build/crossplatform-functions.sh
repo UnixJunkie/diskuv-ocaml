@@ -78,7 +78,8 @@ function disambiguate_filesystem_paths () {
 # - array:ENV_ARGS - Optional. An array of environment variables which will be modified by this function
 # Outputs:
 # - env:BUILDHOST_ARCH will contain the correct ARCH
-# - env:VCVARS_ENV if and only if the vcvars could be detected (aka. on a Windows machine, and it is installed)
+# - env:VCVARS_PATH is new PATH if and only if the vcvars could be detected (aka. on a Windows machine, and it is installed)
+# - env:VCVARS_ARCH is 32 or 64 if and only if the vcvars could be detected
 # - array:ENV_ARGS - An array of environment variables for Visual Studio, including any provided at
 #   the start of the function
 # Return Values:
@@ -112,8 +113,11 @@ function autodetect_vcvars () {
 
     if [[ "$BUILDHOST_ARCH" = windows_x86 ]]; then
         VCVARSBATCHFILE=vcvars32.bat
+        VCVARS_ARCH=32
     else
         VCVARSBATCHFILE=vcvars64.bat
+        # shellcheck disable=SC2034
+        VCVARS_ARCH=64
     fi
 
     # FIRST, create a file that calls vcvarsxxx.bat and then adds a `set` dump.

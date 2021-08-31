@@ -202,10 +202,10 @@ PKGCONFIG_UNIX="$DKMLPLUGIN_BUILDHOST/pkgconfig/$dkml_root_version"
 install -d "$PKGCONFIG_UNIX"
 if is_windows_build_machine; then
     if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
-    if [[ ! -e "$PKGCONFIG_UNIX"/libffi.pc ]]; then
-        "$DiskuvOCamlHome"/tools/apps/dkml-templatizer.exe -o "$PKGCONFIG_UNIX"/libffi.pc.tmp "$DKMLDIR"/etc/pkgconfig/windows/libffi.pc
-        mv "$PKGCONFIG_UNIX"/libffi.pc.tmp "$PKGCONFIG_UNIX"/libffi.pc
-    fi
+    # For now we don't need the dkml-templatizer since we installed the libffi.pc with correct paths
+    #   "$DiskuvOCamlHome"/tools/apps/dkml-templatizer.exe -o "$PKGCONFIG_UNIX"/libffi.pc.tmp "$DKMLDIR"/etc/pkgconfig/windows/libffi.pc
+    #   mv "$PKGCONFIG_UNIX"/libffi.pc.tmp "$PKGCONFIG_UNIX"/libffi.pc
+    install "$DiskuvOCamlHome"/tools/libffi/shared/lib/pkgconfig/libffi.pc "$PKGCONFIG_UNIX"/libffi.pc
     set +x
 fi
 

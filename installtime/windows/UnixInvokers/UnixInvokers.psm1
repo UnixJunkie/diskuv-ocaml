@@ -61,7 +61,9 @@ function Invoke-MSYS2Command {
         $MSYS2Dir,
         $RedirectStandardOutput,
         $RedirectStandardError,
-        $TailFunction
+        $TailFunction,
+        [switch]
+        $IgnoreErrors
     )
     # Note: We use the same environment variable settings as make.cmd
     $arglist = @("MSYSTEM=MSYS",
@@ -93,7 +95,7 @@ function Invoke-MSYS2Command {
     }
     $proc.WaitForExit()
     $exitCode = $proc.ExitCode
-    if ($exitCode -ne 0) {
+    if (!$IgnoreErrors -and $exitCode -ne 0) {
         Write-Error "MSYS2 command failed! Exited with $exitCode. Command was: $Command"
         throw
     }
