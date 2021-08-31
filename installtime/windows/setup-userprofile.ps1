@@ -997,10 +997,12 @@ try {
     $ProgramToolLibffiMSYS2AbsPath = & $MSYS2Dir\usr\bin\cygpath.exe -au "$ProgramToolLibffiDir"
     $LibffiWorkMSYS2AbsPath = & $MSYS2Dir\usr\bin\cygpath.exe -au "$LibffiWorkDir"
 
-    Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-        -Command ("env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps " +
-            "'$DkmlPath\installtime\msys2\compile-native-libffi.sh' '$DkmlPath' '$LibffiVersion' " +
-            "'$LibffiWorkMSYS2AbsPath' '$ProgramToolLibffiMSYS2AbsPath'")
+    if (!(Test-Path "$ProgramToolLibffiDir\shared\lib\pkgconfig\libffi.pc") -or !(Test-Path "$ProgramToolLibffiDir\static\lib\pkgconfig\libffi.pc")) {
+        Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
+            -Command ("env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps " +
+                "'$DkmlPath\installtime\msys2\compile-native-libffi.sh' '$DkmlPath' '$LibffiVersion' " +
+                "'$LibffiWorkMSYS2AbsPath' '$ProgramToolLibffiMSYS2AbsPath'")
+    }
 
     # END Native Windows libffi
     # ----------------------------------------------------------------

@@ -34,7 +34,9 @@ if [[ ! -e "$LIBFFI_WORK/configure" ]]; then
     tar xCfz "$WORKDIR" "$LIBFFI_WORK.tar.gz"
 fi
 
-INSTALLDIR_UNIX=$(cygpath -au "$INSTALLDIR")
+# For MSYS we require the libffi.pc to be a mixed path like:
+#       prefix=C:/Users/.../tools/libffi/shared
+INSTALLDIR_UNIX=$(cygpath -am "$INSTALLDIR")
 
 cd "$WORKDIR/libffi-$LIBFFI_VERSION"
 
