@@ -27,6 +27,7 @@ Appendix A.
     The Use Limitation exception clause is available to:
 
     "Institut national de recherche en informatique et en automatique" (Inria)
+    "Eduardo Rafael <theeduardorfs@gmail.com>"
 
     and to the list of package authors published by Opam on August 17, 2021:
 
