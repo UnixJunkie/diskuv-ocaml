@@ -251,7 +251,7 @@ $GitPath = (get-item "$GitExe").Directory.FullName
 
 # Magic constants that will identify new and existing deployments:
 # * Immutable git tags
-$AvailableOpamVersion = "2.1.0.msys2.5" # needs to be a real Opam tag in https://github.com/diskuv/opam!
+$AvailableOpamVersion = "2.1.0.msys2.6" # needs to be a real Opam tag in https://github.com/diskuv/opam!
 $NinjaVersion = "1.10.2"
 $CMakeVersion = "3.21.1"
 $LibffiVersion = "3.4.2"
@@ -933,7 +933,7 @@ try {
         #   :: To complete this update all MSYS2 processes including this terminal will be closed. Confirm to proceed [Y/n] SUCCESS: The process with PID XXXXX has been terminated.
         # ... when pacman decides to upgrade itself, it kills all the MSYS2 processes. So we need to run at least
         # once and ignore any errors from forcible termination.
-        Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
+        Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir -IgnoreErrors `
             -Command ("pacman -Syu --noconfirm")
         Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
             -Command ("pacman -Syu --noconfirm")
