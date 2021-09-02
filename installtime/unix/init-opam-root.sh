@@ -3,7 +3,7 @@
 # init-opam-root.sh PLATFORM
 #
 # Purpose:
-# 1. Install an OPAMROOT (`opam init`) in $env:LOCALAPPDATA/.opam or
+# 1. Install an OPAMROOT (`opam init`) in $env:LOCALAPPDATA/opam or
 #    the PLATFORM's opam-root/ folder.
 # 2. Especially for Windows, optionally install a working
 #    global Opam switch.
@@ -92,8 +92,8 @@ set +x
 # BEGIN opam init
 
 # Windows does not have a non-deprecated working Opam solution, so we choose
-# to have $LOCALAPPDATA/.opam be the Opam root for the dev platform. That is
-# aligned with ~/.opam for Unix-y Opam. For Windows we also don't have a
+# to have $LOCALAPPDATA/opam be the Opam root for the dev platform. That is
+# aligned with ~/.opam for Opam before Opam 2.2. For Windows we also don't have a
 # package manager that comes with `opam` pre-compiled, so we bootstrap an
 # Opam installation from our Moby Docker downloaded of ocaml/opam image
 # (see install-world.ps1).

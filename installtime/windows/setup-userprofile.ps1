@@ -343,12 +343,6 @@ $MSYS2Packages = @(
     "procps", # provides `pgrep`
 
     # ----
-    # Needed by OCaml package `conf-ncurses` used by `opam install ctypes --with-test`
-    # ----
-
-    "ncurses-devel",
-
-    # ----
     # Needed for our own sanity!
     # ----
 
@@ -1139,7 +1133,7 @@ try {
     $global:ProgressActivity = "Remove extended ACLs"
     Write-ProgressStep
 
-    $DiskuvBootCygwinAbsPath = & $CygwinRootPath\bin\cygpath.exe -au "$env:LOCALAPPDATA\.opam\diskuv-boot-DO-NOT-DELETE"
+    $DiskuvBootCygwinAbsPath = & $CygwinRootPath\bin\cygpath.exe -au "$env:LOCALAPPDATA\opam\diskuv-boot-DO-NOT-DELETE"
     Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "find '$DiskuvBootCygwinAbsPath' -print0 | xargs -0 --no-run-if-empty setfacl --remove-all --remove-default"
 
     $ProgramCygwinAbsPath = & $CygwinRootPath\bin\cygpath.exe -au "$ProgramPath"
