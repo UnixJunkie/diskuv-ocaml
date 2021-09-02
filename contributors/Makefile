@@ -103,12 +103,12 @@ _build/portable-distribution.tar.gz:
 	tar cvCfz .. $(CURDIR)/$@ --owner root --group root --transform 's,^,diskuv-ocaml/,' --no-xattrs $(ARCHIVE_MEMBERS)
 
 .PHONY: release-prerelease
-release-prerelease: auth-gitlab-cli _build/portable-distribution.zip _build/portable-distribution.tar.gz
+release-prerelease: auth-gitlab-cli install-gitlab-release-cli _build/portable-distribution.zip _build/portable-distribution.tar.gz
 	@export PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH"; \
 	BVDIR=`which bump2version` && BVDIR=`dirname "$$BVDIR"` && export PATH="$$BVDIR:$$PATH" && bash -x release.sh -p
 
 .PHONY: release-complete
-release-complete: auth-gitlab-cli _build/portable-distribution.zip _build/portable-distribution.tar.gz
+release-complete: auth-gitlab-cli install-gitlab-release-cli _build/portable-distribution.zip _build/portable-distribution.tar.gz
 	@export PATH="/usr/local/bin:/usr/bin:/bin:/mingw64/bin:$$PATH"; \
 	BVDIR=`which bump2version` && BVDIR=`dirname "$$BVDIR"` && export PATH="$$BVDIR:$$PATH" && bash -x release.sh
 
