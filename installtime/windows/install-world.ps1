@@ -41,7 +41,6 @@ function Write-ProgressStep {
     }
     $global:ProgressStep += 1
 }
-filter timestamp {"$(Get-Date -Format FileDateTimeUniversal): $_"}
 
 # ----------------------------------------------------------------
 # BEGIN Setup machine

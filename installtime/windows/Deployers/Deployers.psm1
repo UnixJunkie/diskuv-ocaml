@@ -166,7 +166,7 @@ function Start-BlueGreenDeploy {
     }
 
     # set the slot state
-    $currentepochms = [math]::Round(1000 * (Get-Date -UFormat %s))
+    $currentepochms = Get-CurrentEpochMillis
     $state[$slotIdx].id = $DeploymentId
     $state[$slotIdx].lastepochms = $currentepochms
     $state[$slotIdx].success = $false
@@ -452,7 +452,7 @@ function Step-BlueGreenDeploySlot {
         [Parameter(Mandatory = $true)]
         $DeployState
     )
-    $currentepochms = [math]::Round(1000 * (Get-Date -UFormat %s))
+    $currentepochms = Get-CurrentEpochMillis
     $next = Step-BlueGreenDeploySlotDryRun `
         -DeploymentId $DeploymentId `
         -ImmutableDeployState $DeployState `
@@ -471,6 +471,11 @@ function New-CleanDirectory {
         Remove-Item -Path $Path -Recurse -Force
     }
     New-Item -Path $Path -ItemType Directory | Out-Null
+}
+
+function Get-CurrentEpochMillis {
+    [long]$timestamp = [math]::Round((([datetime]::UtcNow) - (Get-Date -Date '1/1/1970')).TotalMilliseconds)
+    $timestamp
 }
 
 function Invoke-BlueGreenDeploySlotTest {
