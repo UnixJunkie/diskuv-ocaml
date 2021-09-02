@@ -671,7 +671,7 @@ try {
     # ----------------------------------------------------------------
     # BEGIN CMake
 
-    $global:ProgressActivity = "Install Ninja"
+    $global:ProgressActivity = "Install CMake"
     Write-ProgressStep
 
     $CMakeCachePath = "$TempPath\cmake"

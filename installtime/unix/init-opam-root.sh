@@ -182,6 +182,83 @@ fi
 
 # We use the Opam plugin directory to hold our root-specific installations.
 # http://opam.ocaml.org/doc/Manual.html#opam-root
+#
+# In Diskuv OCaml each architecture gets its own Opam root.
+
+# -----------------------
+
+# Make versioned vcpkg
+#
+# Q: Why is vcpkg here rather than in DiskuvOCamlHome?
+#
+# vcpkg is architecture specific. It varies based on the vcpkg --triplet.
+
+# Set BUILDHOST_ARCH
+build_machine_arch
+
+VCPKG_VER="2021.05.12"
+
+VCPKG_UNIX="$DKMLPLUGIN_BUILDHOST/vcpkg/$dkml_root_version"
+is_windows_build_machine && VCPKG_UNIX=$(cygpath -au "$VCPKG_UNIX")
+
+if is_windows_build_machine; then
+    if [[ "$BUILDHOST_ARCH" = windows_x86_64 ]]; then
+        # for some reason vcpkg will do x86-windows by default.
+        VCPKG_INSTALL=("$VCPKG_UNIX"/vcpkg.exe install --triplet=x64-windows)
+    else
+        VCPKG_INSTALL=("$VCPKG_UNIX"/vcpkg.exe install --triplet=x86-windows)
+    fi
+else
+    VCPKG_INSTALL=("$VCPKG_UNIX"/vcpkg install)
+fi
+
+# shellcheck disable=SC2154
+install -d "$VCPKG_UNIX"
+
+if is_windows_build_machine || [[ "${DKML_VENDOR_VCPKG:-OFF}" = ON ]]; then
+    if [[ ! -e "$VCPKG_UNIX"/bootstrap-vcpkg.sh ]]; then
+        # Download vcpkg
+        if [[ ! -e "$VCPKG_UNIX"/src.tar.gz ]]; then
+            if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
+            wget "https://github.com/microsoft/vcpkg/archive/refs/tags/$VCPKG_VER.tar.gz" -O "$VCPKG_UNIX"/src.tar.gz.tmp
+            mv "$VCPKG_UNIX"/src.tar.gz.tmp "$VCPKG_UNIX"/src.tar.gz
+            set +x
+        fi
+
+        # Expand archive
+        tar xCfz "$VCPKG_UNIX" "$VCPKG_UNIX"/src.tar.gz --strip-components=1
+        rm -f "$VCPKG_UNIX"/src.tar.gz
+    fi
+
+    if [[ ! -e "$VCPKG_UNIX"/vcpkg ]] && [[ ! -e "$VCPKG_UNIX"/vcpkg.exe ]]; then
+        # We don't need to send telemetry to Microsoft
+        UNIX_ARGS=(-disableMetrics)
+        WIN_ARGS=(-disableMetrics)
+        if is_reproducible_platform; then
+            # Use cmake and ninja from the system if we are in a reproducible (Linux) container.
+            # (This clause won't be executed on Windows, and even if it were there is no equivalent of useSystemBinaries)
+            UNIX_ARGS+=(-useSystemBinaries)
+        fi
+        if is_windows_build_machine; then
+            # 2021-08-05: Ultimately invokes src\build-tools\vendor\vcpkg\scripts\bootstrap.ps1 which you can peek at
+            #             for command line arguments. Only -disableMetrics is recognized.
+            if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
+            "$VCPKG_UNIX/bootstrap-vcpkg.bat" "${WIN_ARGS[@]}"
+            set +x
+        else
+            exec_in_platform "$VCPKG_UNIX/bootstrap-vcpkg.sh" "${UNIX_ARGS[@]}"
+        fi
+    fi
+
+fi
+
+# -----------------------
+
+# vcpkg packages
+
+if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
+"${VCPKG_INSTALL[@]}" libffi libuv
+set +x
 
 # -----------------------
 
@@ -198,6 +275,8 @@ fi
 # all switches in the same Opam root.
 
 PKGCONFIG_UNIX="$DKMLPLUGIN_BUILDHOST/pkgconfig/$dkml_root_version"
+is_windows_build_machine && PKGCONFIG_UNIX=$(cygpath -au "$PKGCONFIG_UNIX")
+
 # shellcheck disable=SC2154
 install -d "$PKGCONFIG_UNIX"
 if is_windows_build_machine; then

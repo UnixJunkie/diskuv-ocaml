@@ -147,6 +147,8 @@ and it also includes some C-language components for the cross-platform tooling w
     `CMake <https://cmake.org/>`_, the standard high-level build tool for C and C++ projects
 - ninja
     `Ninja <https://ninja-build.org/>`_, a low level build tool primarily for C projects
+- vcpkg
+    `vcpkg <https://vcpkg.io/en/index.html>`_, a C/C++ package manager for acquiring and managing libraries
 
 The *Diskuv OCaml* distribution will automatically install the following components if missing from your system:
 
