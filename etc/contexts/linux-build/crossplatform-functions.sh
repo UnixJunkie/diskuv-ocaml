@@ -15,8 +15,8 @@ function is_windows_build_machine () {
     return 1
 }
 
-# Tries to find the ARCH (defined in TOPDIR/Makefile corresponding to the build machine
-# For now only works in Linux x86/x86_64.
+# Tries to find the ARCH (defined in TOPDIR/Makefile corresponding to the build machine)
+# For now only tested in Linux/Windows x86/x86_64.
 # Outputs:
 # - env:BUILDHOST_ARCH will contain the correct ARCH
 function build_machine_arch () {
@@ -47,6 +47,31 @@ function build_machine_arch () {
             ;;
         *)
             echo "FATAL: Unsupported build machine type obtained from 'uname -m': $MACHINE" >&2
+            exit 1
+            ;;
+    esac
+}
+
+# Tries to find the VCPKG_TRIPLET (defined in TOPDIR/Makefile corresponding to the build machine)
+# For now only tested in Linux/Windows x86/x86_64.
+# Inputs:
+# - env:PLATFORM
+# Outputs:
+# - env:BUILDHOST_ARCH will contain the correct ARCH
+# - env:PLATFORM_VCPKG_TRIPLET will contain the correct vcpkg triplet
+function platform_vcpkg_triplet () {
+    build_machine_arch
+    # TODO: This static list is brittle. Should parse the Makefile or better yet
+    # place in a different file that can be used by this script and the Makefile.
+    case "$PLATFORM-$BUILDHOST_ARCH" in
+        "dev-windows_x86")    PLATFORM_VCPKG_TRIPLET=x86-windows ;;
+        "dev-windows_x86_64") PLATFORM_VCPKG_TRIPLET=x64-windows ;;
+        "dev-linux_x86")      PLATFORM_VCPKG_TRIPLET=x86-linux ;;
+        "dev-linux_x86_64")
+            # shellcheck disable=SC2034
+            PLATFORM_VCPKG_TRIPLET=x64-linux ;;
+        *)
+            echo "FATAL: Unsupported vcpkg triplet for PLATFORM: $PLATFORM" >&2
             exit 1
             ;;
     esac

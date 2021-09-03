@@ -18,9 +18,14 @@ trap 'rm -rf "$WORK"' EXIT
 
 # shellcheck disable=1091
 source "$DKMLDIR/runtime/unix/_common_tool.sh"
+# shellcheck disable=SC1091
+source "$DKMLDIR"/.dkmlroot # set $dkml_root_version
 
 # _common_tool.sh functions expect us to be in $TOPDIR. We'll change directories later.
 cd "$TOPDIR"
+
+# Set PLATFORM_VCPKG_TRIPLET
+platform_vcpkg_triplet
 
 # Set OPAMROOTDIR_BUILDHOST and OPAMROOTDIR_EXPAND
 set_opamrootdir
@@ -46,14 +51,14 @@ if is_minimal_opam_root_present "$OPAMROOTDIR_BUILDHOST"; then
     source "$WORK/2.sh"
 fi
 
-# Add opam.exe to the PATH
-PATH="$TOPDIR/build/_tools/common/opam-bootstrap/bin:$PATH"
-
 # Add tools to the PATH
-PATH="$TOPDIR/build/_tools/common/local/bin:$PATH"
-if [[ -n "${BUILDTYPE:-}" ]]; then
-    PATH="$TOPDIR/build/_tools/$BUILDTYPE/local/bin:$PATH"
-fi
+PATH="$TOPDIR/$TOOLSDIR/local/bin:$TOPDIR/$TOOLSCOMMONDIR/local/bin:$PATH"
+
+# Add vcpkg packages to the PATH
+# shellcheck disable=SC2154
+VCPKG_INSTALLED="$DKMLPLUGIN_BUILDHOST/vcpkg/$dkml_root_version/installed/$PLATFORM_VCPKG_TRIPLET"
+if is_windows_build_machine; then VCPKG_INSTALLED=$(cygpath -au "$VCPKG_INSTALLED"); fi
+PATH="$VCPKG_INSTALLED/bin:$VCPKG_INSTALLED/tools/pkgconf:$PATH"
 
 # On Windows ...
 if [[ -n "${LOCALAPPDATA:-}" ]]; then

@@ -22,7 +22,7 @@ function usage () {
     echo "    within-sandbox [-b] [-1] -p PLATFORM              Enter the Build Sandbox with an interactive bash shell." >&2
     echo "    within-sandbox [-b] [-1] -p PLATFORM command ...  Run the command and any arguments in the Build Sandbox." >&2
     echo "Options:" >&2
-    echo "       -p PLATFORM: The target platform (not 'dev') used. DK_TOOLS_DIR will be based on this" >&2
+    echo "       -p PLATFORM: The target platform (not 'dev') used. DKML_TOOLS_DIR will be based on this" >&2
     echo "       -b BUILDTYPE: If specified, will set DK_BUILD_DIR in the Build Sandbox" >&2
     echo "Advanced Options:" >&2
     echo "       -n: If specified, no compilation tools like vcvars64.bat are added to the environment." >&2
@@ -91,6 +91,11 @@ else
     # shellcheck disable=SC1091
     source "$DKMLDIR"/runtime/unix/_common_tool.sh
 fi
+# shellcheck disable=SC1091
+source "$DKMLDIR"/.dkmlroot # set $dkml_root_version
+
+# Set PLATFORM_VCPKG_TRIPLET
+platform_vcpkg_triplet
 
 # Use same technique of dockcross so we can let the developer see their own files with their own user/group
 # shellcheck disable=SC2034
@@ -102,9 +107,11 @@ USER_IDS=(-e BUILDER_UID="$BUILDER_UID" -e BUILDER_GID="$( id -g )" -e BUILDER_U
 DOCKER_ARGS=(
     # Mount TOPDIR as /work
     -v "$TOPDIR":/opt/diskuv-ocaml-build-chroot/work
-    # use DK_xxx_DIR so no chance of conflict with any external programs. For example BUILDDIR is used within Esy.
-    --env DK_TOOLS_DIR="/work/$TOOLSDIR"
-    --env DK_TOOLSCOMMON_DIR="/work/$TOOLSCOMMONDIR"
+    # use DKML_xxx so no chance of conflict with any external programs. For example BUILDDIR is used within Esy.
+    --env DKML_ROOT_VERSION="$dkml_root_version"
+    --env DKML_VCPKG_TRIPLET="$PLATFORM_VCPKG_TRIPLET"
+    --env DKML_TOOLS_DIR="/work/$TOOLSDIR"
+    --env DKML_TOOLSCOMMON_DIR="/work/$TOOLSCOMMONDIR"
     # whether to get compilation tools into environment
     --env SANDBOX_COMPILATION="$COMPILATION"
 )

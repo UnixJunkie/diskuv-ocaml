@@ -32,9 +32,9 @@ if [[ "$BUILDER_UID" -ne 0 && -d ~ && ! -e ~/.bash_history && -w /mnt/bash_histo
     ln -s /mnt/bash_history ~/.bash_history
 fi
 
-if [[ -n "${DK_TOOLS_DIR:-}" ]]; then
+if [[ -n "${DKML_TOOLS_DIR:-}" ]]; then
     # We only add to PATH and not LD_LIBRARY_PATH because all the tools should be statically linked executables. If not, use compile time rpath or similar.
-    export PATH="$DK_TOOLS_DIR/local/bin:$DK_TOOLSCOMMON_DIR/local/bin:$PATH"
+    export PATH="$DKML_TOOLS_DIR/local/bin:$DKML_TOOLSCOMMON_DIR/local/bin:$PATH"
 fi
 
 # On Windows add C:\Windows\System32 to end of PATH
@@ -64,6 +64,13 @@ if [[ -n "$SANDBOX_PRE_HOOK" ]]; then
     if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then echo "+ [eval] $SANDBOX_PRE_HOOK" >&2; fi
     # shellcheck disable=SC1090
     source <(eval "$SANDBOX_PRE_HOOK")
+fi
+
+# Add vcpkg packages to the PATH especially now that prehooks may have set OPAMROOT
+if [[ -n "${DKML_VCPKG_TRIPLET:-}" && -n "${OPAMROOT:-}" ]]; then
+    VCPKG_INSTALLED="$OPAMROOT/plugins/diskuvocaml/vcpkg/$DKML_ROOT_VERSION/installed/$DKML_VCPKG_TRIPLET"
+    # shellcheck disable=SC2154
+    PATH="$VCPKG_INSTALLED/bin:$VCPKG_INSTALLED/tools/pkgconf:$PATH"
 fi
 
 # print PATH for troubleshooting

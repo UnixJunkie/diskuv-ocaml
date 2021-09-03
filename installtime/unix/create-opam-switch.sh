@@ -106,7 +106,7 @@ else
     source "$DKMLDIR"/runtime/unix/_common_tool.sh
 fi
 # shellcheck disable=SC1091
-source "$DKMLDIR"/.dkmlroot
+source "$DKMLDIR"/.dkmlroot # set $dkml_root_version
 
 # To be portable whether we build scripts in the container or not, we
 # change the directory to always be in the TOPDIR (just like the container
@@ -253,29 +253,17 @@ fi
 # --------------------------------
 # BEGIN opam option
 
+# Set PLATFORM_VCPKG_TRIPLET
+platform_vcpkg_triplet
+
 if is_windows_build_machine; then
-    # 1. Opam environment update variables treat backslashes as escapes.
-    # 2. MSYS2 https://packages.msys2.org/base/pkgconf (which is slightly different from
-    # https://packages.msys2.org/package/pkg-config) only parses MSYS2 absolute paths
-    # correctly; it guesses the system drive (because both pkgconf and pkg-config split on
-    # colons) and sometimes gets it wrong when you have more than one system drive. So
-    # add the plugin pkgconfig directory as a MSYS2 absolute path.
-    # In fact, both pkgconf and pkg-config seem to use `:` as the path separator whereas
-    # Opam will append a `;` (confer http://opam.ocaml.org/doc/Manual.html#Environment-updates).
-    # 3. Opam adds its own PKG_CONFIG_PATH entry from the switch
-    # (ex. `Z:\source\diskuv-xyz\build\dev\Debug\_opam\lib/pkgconfig`) which isn't an MSYS2
-    # path. So we take the opportunity to add a MSYS2 path so it locates it properly.
-    PKG_CONFIG_PATH_ADD1=$(cygpath -au "$DKMLPLUGIN_BUILDHOST/pkgconfig/$dkml_root_version")
-    if is_reproducible_platform; then
-        PKG_CONFIG_PATH_ADD2="$OPAMSWITCHDIR_EXPAND"/_opam/lib/pkgconfig
-    else
-        PKG_CONFIG_PATH_ADD2=$(cygpath -au "$OPAMSWITCHFINALDIR_BUILDHOST"/lib/pkgconfig)
-    fi
-    # Force our paths to be considered through colon delimiters
-    PKG_CONFIG_PATH_ADD=":$PKG_CONFIG_PATH_ADD1:$PKG_CONFIG_PATH_ADD2:"
+    PKG_CONFIG_PATH_ADD="$DKMLPLUGIN_BUILDHOST\\vcpkg\\$dkml_root_version\\installed\\$PLATFORM_VCPKG_TRIPLET\\lib\\pkgconfig"
 else
-    PKG_CONFIG_PATH_ADD="$DKMLPLUGIN_BUILDHOST/pkgconfig/$dkml_root_version"
+    PKG_CONFIG_PATH_ADD="$DKMLPLUGIN_BUILDHOST/vcpkg/$dkml_root_version/installed/$PLATFORM_VCPKG_TRIPLET/lib/pkgconfig"
 fi
+
+# Opam `PKG_CONFIG_PATH += "xxx"` requires that `xxx` is a valid Opam string. Escape all the backslashes.
+PKG_CONFIG_PATH_ADD=${PKG_CONFIG_PATH_ADD//\\/\\\\}
 
 # http://opam.ocaml.org/doc/Manual.html#Environment-updates
 # `+=` prepends to the environment variable without adding a path separator (`;` or `:`) at the end if empty

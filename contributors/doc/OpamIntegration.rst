@@ -40,8 +40,9 @@ a plugin directory ``OPAMROOT/plugins/diskuvocaml/``.
 
 For Unix systems it is empty.
 
-For Windows systems it contains `pkg-config <https://en.wikipedia.org/wiki/Pkg-config>`_
-necessary for a few OCaml packages with C bindings.
+For Windows systems it contains:
+
+* `vcpkg <https://vcpkg.io>`_ which has the C/C++ packages needed by some OCaml packages
 
 Global Variables
 ----------------

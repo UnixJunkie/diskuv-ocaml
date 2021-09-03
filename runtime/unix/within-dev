@@ -77,16 +77,21 @@ else
     # shellcheck disable=SC1091
     source "$DKMLDIR"/runtime/unix/_common_tool.sh
 fi
+# shellcheck disable=SC1091
+source "$DKMLDIR"/.dkmlroot # set $dkml_root_version
+
+# Set PLATFORM_VCPKG_TRIPLET
+platform_vcpkg_triplet
 
 # Essential environment values.
 ENV_ARGS=(
     # use DK_xxx_DIR so no chance of conflict with any external programs. For example BUILDDIR is used within Esy.
-    DK_TOOLS_DIR="$TOPDIR/$TOOLSDIR"
-    DK_TOOLSCOMMON_DIR="$TOPDIR/$TOOLSCOMMONDIR"
+    DKML_TOOLS_DIR="$TOPDIR/$TOOLSDIR"
+    DKML_TOOLSCOMMON_DIR="$TOPDIR/$TOOLSCOMMONDIR"
 )
 
 # give builds access to tools
-ENV_PATH_PREFIX="$TOPDIR/$TOOLSDIR/local/bin"
+ENV_PATH_PREFIX="$TOPDIR/$TOOLSDIR/local/bin:$TOPDIR/$TOOLSCOMMONDIR/local/bin"
 ENV_PATH_SUFFIX=
 
 # On Windows add C:\Windows\System32 to end of PATH
@@ -139,6 +144,13 @@ if [[ -n "$PREHOOK" ]]; then
     # Especially ensure /usr/bin:/bin is present in PATH even if redundant so
     # `trap 'rm -rf "$WORK"' EXIT` handler can find 'rm'.
     if [[ -n "${CYGPATH_LOC:-}" ]]; then PATH=$($CYGPATH_LOC --path "$PATH"):/usr/bin:/bin; fi
+fi
+
+# Add vcpkg packages to the PATH especially now that prehooks may have set OPAMROOT
+# shellcheck disable=SC2154
+if [[ -n "${OPAMROOT:-}" ]]; then
+    VCPKG_INSTALLED="$OPAMROOT/plugins/diskuvocaml/vcpkg/$dkml_root_version/installed/$PLATFORM_VCPKG_TRIPLET"
+    PATH="$VCPKG_INSTALLED/bin:$VCPKG_INSTALLED/tools/pkgconf:$PATH"
 fi
 
 # print PATH for troubleshooting

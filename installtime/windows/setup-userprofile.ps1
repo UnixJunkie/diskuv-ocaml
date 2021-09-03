@@ -334,7 +334,8 @@ $MSYS2Packages = @(
     # Needed by many OCaml packages during builds
     # ----
 
-    "pkgconf",
+    # We use native Windows pkgconf from vcpkg
+    # "pkgconf",
 
     # ----
     # Needed by OCaml package `feather`
@@ -976,29 +977,6 @@ try {
 "@
 
     # END Define dkmlvars
-    # ----------------------------------------------------------------
-
-    # ----------------------------------------------------------------
-    # BEGIN Native Windows libffi
-
-    $global:ProgressActivity = "Compile Native Windows libffi"
-    Write-ProgressStep
-
-    $ProgramRelToolDir = "tools\libffi"
-    $ProgramToolLibffiDir = "$ProgramPath\$ProgramRelToolDir"
-    $LibffiWorkDir = "$TempPath\libffi-bootstrap"
-
-    $ProgramToolLibffiMSYS2AbsPath = & $MSYS2Dir\usr\bin\cygpath.exe -au "$ProgramToolLibffiDir"
-    $LibffiWorkMSYS2AbsPath = & $MSYS2Dir\usr\bin\cygpath.exe -au "$LibffiWorkDir"
-
-    if (!(Test-Path "$ProgramToolLibffiDir\shared\lib\pkgconfig\libffi.pc") -or !(Test-Path "$ProgramToolLibffiDir\static\lib\pkgconfig\libffi.pc")) {
-        Invoke-MSYS2CommandWithProgress -MSYS2Dir $MSYS2Dir `
-            -Command ("env $UnixVarsContentsOnOneLine TOPDIR=/opt/diskuv-ocaml/installtime/apps " +
-                "'$DkmlPath\installtime\msys2\compile-native-libffi.sh' '$DkmlPath' '$LibffiVersion' " +
-                "'$LibffiWorkMSYS2AbsPath' '$ProgramToolLibffiMSYS2AbsPath'")
-    }
-
-    # END Native Windows libffi
     # ----------------------------------------------------------------
 
     # ----------------------------------------------------------------

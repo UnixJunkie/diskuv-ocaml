@@ -18,6 +18,9 @@
 # -------------------------------------------------------
 set -euf -o pipefail
 
+VCPKG_VER="2021.05.12"
+VCPKG_PKGS=(libffi libuv)
+
 # shellcheck disable=SC2034
 PLATFORM=$1
 shift
@@ -47,10 +50,14 @@ cd "$TOPDIR"
 # even run this script).
 #
 # So ... try to do as much as possible in this section (or "ON-DEMAND OPAM ROOT INSTALLATIONS" below).
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # TODO: These implementation won't work in containers; needs a mount point for the opam repositories, and
 # an @@EXPAND_DKMLPARENTHOME@@ macro
 set_dkmlparenthomedir
+
+# -----------------------
+# BEGIN install opam repositories
 
 # Make versioned opam-repositories
 #
@@ -85,6 +92,10 @@ if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
 rsync "${RSYNC_OPTS[@]}" "$DKMLDIR"/etc/opam-repositories/ "$OPAMREPOS_UNIX"
 set +x
 
+# END install opam repositories
+# -----------------------
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # END           ON-DEMAND VERSIONED GLOBAL INSTALLS
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -179,6 +190,7 @@ fi
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # BEGIN         ON-DEMAND OPAM ROOT INSTALLATIONS
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # We use the Opam plugin directory to hold our root-specific installations.
 # http://opam.ocaml.org/doc/Manual.html#opam-root
@@ -186,30 +198,25 @@ fi
 # In Diskuv OCaml each architecture gets its own Opam root.
 
 # -----------------------
+# BEGIN install vcpkg
 
-# Make versioned vcpkg
-#
 # Q: Why is vcpkg here rather than in DiskuvOCamlHome?
 #
-# vcpkg is architecture specific. It varies based on the vcpkg --triplet.
+# vcpkg is architecture specific. Each package it installs is for
+# a specific `--triplet`.
 
-# Set BUILDHOST_ARCH
-build_machine_arch
-
-VCPKG_VER="2021.05.12"
+# Set BUILDHOST_ARCH and PLATFORM_VCPKG_TRIPLET.
+# We need PLATFORM_VCPKG_TRIPLET especially for Windows since Windows vcpkg defaults
+# to x86-windows.
+platform_vcpkg_triplet
 
 VCPKG_UNIX="$DKMLPLUGIN_BUILDHOST/vcpkg/$dkml_root_version"
 is_windows_build_machine && VCPKG_UNIX=$(cygpath -au "$VCPKG_UNIX")
 
 if is_windows_build_machine; then
-    if [[ "$BUILDHOST_ARCH" = windows_x86_64 ]]; then
-        # for some reason vcpkg will do x86-windows by default.
-        VCPKG_INSTALL=("$VCPKG_UNIX"/vcpkg.exe install --triplet=x64-windows)
-    else
-        VCPKG_INSTALL=("$VCPKG_UNIX"/vcpkg.exe install --triplet=x86-windows)
-    fi
+    VCPKG_INSTALL=("$VCPKG_UNIX"/vcpkg.exe install --triplet="$PLATFORM_VCPKG_TRIPLET")
 else
-    VCPKG_INSTALL=("$VCPKG_UNIX"/vcpkg install)
+    VCPKG_INSTALL=("$VCPKG_UNIX"/vcpkg install --triplet="$PLATFORM_VCPKG_TRIPLET")
 fi
 
 # shellcheck disable=SC2154
@@ -249,44 +256,29 @@ if is_windows_build_machine || [[ "${DKML_VENDOR_VCPKG:-OFF}" = ON ]]; then
             exec_in_platform "$VCPKG_UNIX/bootstrap-vcpkg.sh" "${UNIX_ARGS[@]}"
         fi
     fi
-
 fi
 
+# END install vcpkg
 # -----------------------
 
-# vcpkg packages
+# -----------------------
+# BEGIN install vcpkg packages
+
+# Install vcpkg packages
 
 if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
-"${VCPKG_INSTALL[@]}" libffi libuv
+"${VCPKG_INSTALL[@]}" "${VCPKG_PKGS[@]}"
 set +x
 
+# Copy pkgconf.exe to pkg-config.exe since not provided
+# automatically. https://github.com/pkgconf/pkgconf#pkg-config-symlink
+
+install "$VCPKG_UNIX"/installed/"$PLATFORM_VCPKG_TRIPLET"/tools/pkgconf/pkgconf.exe \
+    "$VCPKG_UNIX"/installed/"$PLATFORM_VCPKG_TRIPLET"/tools/pkgconf/pkg-config.exe
+
+# END install vcpkg packages
 # -----------------------
 
-# Make versioned package config
-#
-# Q: Why is pkg-config here rather than in DiskuvOCamlHome?
-#
-# PKG_CONFIG_PATH is an Opam environment value that is logically tied to an Opam root.
-# Each Opam root may belong to a different architecture, and PKG_CONFIG_PATH (especially
-# cflags) should be able to vary based on architecture.
-#
-# We are forced to set it with in each switch because `opam option setenv=` is only
-# available on the switch level (a limitation of Opam today), but the value is the same for
-# all switches in the same Opam root.
-
-PKGCONFIG_UNIX="$DKMLPLUGIN_BUILDHOST/pkgconfig/$dkml_root_version"
-is_windows_build_machine && PKGCONFIG_UNIX=$(cygpath -au "$PKGCONFIG_UNIX")
-
-# shellcheck disable=SC2154
-install -d "$PKGCONFIG_UNIX"
-if is_windows_build_machine; then
-    if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
-    # For now we don't need the dkml-templatizer since we installed the libffi.pc with correct paths
-    #   "$DiskuvOCamlHome"/tools/apps/dkml-templatizer.exe -o "$PKGCONFIG_UNIX"/libffi.pc.tmp "$DKMLDIR"/etc/pkgconfig/windows/libffi.pc
-    #   mv "$PKGCONFIG_UNIX"/libffi.pc.tmp "$PKGCONFIG_UNIX"/libffi.pc
-    install "$DiskuvOCamlHome"/tools/libffi/shared/lib/pkgconfig/libffi.pc "$PKGCONFIG_UNIX"/libffi.pc
-    set +x
-fi
-
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # END           ON-DEMAND OPAM ROOT INSTALLATIONS
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
