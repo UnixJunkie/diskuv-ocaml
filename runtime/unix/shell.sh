@@ -9,8 +9,10 @@ shift
 DKMLDIR=$(dirname "$0")
 DKMLDIR=$(cd "$DKMLDIR/../.." && pwd)
 if [[ ! -e "$DKMLDIR/.dkmlroot" ]]; then echo "FATAL: Not embedded in a 'diskuv-ocaml' repository" >&2 ; exit 1; fi
-TOPDIR=$(git -C "$DKMLDIR/.." rev-parse --show-toplevel)
-TOPDIR=$(cd "$TOPDIR" && pwd)
+if [[ -z "${TOPDIR:-}" ]]; then
+    TOPDIR=$(git -C "$DKMLDIR/.." rev-parse --show-toplevel)
+    TOPDIR=$(cd "$TOPDIR" && pwd)
+fi
 if [[ ! -e "$TOPDIR/dune-project" ]]; then echo "FATAL: Not embedded in a Diskuv OCaml local project" >&2 ; exit 1; fi
 
 WORK=$(mktemp -d)
@@ -32,12 +34,15 @@ set_opamrootdir
 
 # If and only the Opam root exists ...
 if is_minimal_opam_root_present "$OPAMROOTDIR_BUILDHOST"; then
-    # Dump all the environment variables that Opam tells us
+    # Dump all the environment variables that Opam tells us.
+    # This will also transitively include:
+    # * the C compiler environment variables since platform-opam-exec -> within-dev -> autodetect_vsdev
+    # * the TOPDIR tools since platform-opam-exec -> within-dev
     SHELL_WINDOWS=$(cygpath -aw "$SHELL")
     if [[ -n "${BUILDTYPE:-}" ]]; then
-        DKML_BUILD_TRACE=OFF "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" -b "$BUILDTYPE" exec -- "$SHELL_WINDOWS" -c set > "$WORK/1.sh"
+        "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" -b "$BUILDTYPE" exec -- "$SHELL_WINDOWS" -c set > "$WORK/1.sh"
     else
-        DKML_BUILD_TRACE=OFF "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" exec -- "$SHELL_WINDOWS" -c set > "$WORK/1.sh"
+        "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" exec -- "$SHELL_WINDOWS" -c set > "$WORK/1.sh"
     fi
 
     # Remove environment variables that are readonly (like UID) or simply should come from our
@@ -49,19 +54,13 @@ if is_minimal_opam_root_present "$OPAMROOTDIR_BUILDHOST"; then
     # Read the remaining environment variables into this shell
     # shellcheck disable=SC1091
     source "$WORK/2.sh"
+else
+    # Add tools to the PATH
+    PATH="$TOPDIR/$TOOLSDIR/local/bin:$TOPDIR/$TOOLSCOMMONDIR/local/bin:$PATH"
 fi
 
-# Add tools to the PATH
-PATH="$TOPDIR/$TOOLSDIR/local/bin:$TOPDIR/$TOOLSCOMMONDIR/local/bin:$PATH"
-
-# Add vcpkg packages to the PATH
-# shellcheck disable=SC2154
-VCPKG_INSTALLED="$DKMLPLUGIN_BUILDHOST/vcpkg/$dkml_root_version/installed/$PLATFORM_VCPKG_TRIPLET"
-if is_windows_build_machine; then VCPKG_INSTALLED=$(cygpath -au "$VCPKG_INSTALLED"); fi
-PATH="$VCPKG_INSTALLED/bin:$VCPKG_INSTALLED/tools/pkgconf:$PATH"
-
 # On Windows ...
-if [[ -n "${LOCALAPPDATA:-}" ]]; then
+if is_windows_build_machine && [[ -n "${LOCALAPPDATA:-}" ]]; then
     # Add VS Code to the PATH (if it exists)
     LOCALAPPDATA_UNIX=$(cygpath -au "$LOCALAPPDATA")
     if [[ -e "$LOCALAPPDATA_UNIX/Programs/Microsoft VS Code/bin/code" ]]; then

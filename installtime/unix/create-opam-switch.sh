@@ -195,13 +195,11 @@ OPAM_SWITCH_CREATE_OPTS=(
     --yes
 )
 
-# Since there is no ocaml-variants.4.12.0+options+msvc64+msys2 all the compiler options are ignored for Windows!!!
-# (There is an action item in etc/opam-repositories/diskuv-opam-repo/packages/ocaml-variants/ocaml-variants.4.12.0+msvc64+msys2/opam)
 if is_windows_build_machine; then
     OPAMREPOS_CHOICE=("diskuv-$dkml_root_version" "fdopen-mingw-$dkml_root_version" "default")
     OPAM_SWITCH_CREATE_OPTS+=(
         --repos="diskuv-$dkml_root_version,fdopen-mingw-$dkml_root_version,default"
-        --packages="ocaml-variants.$OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS"
+        --packages="ocaml-variants.$OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS$OCAML_OPTIONS"
     )
 else
     OPAMREPOS_CHOICE=("diskuv-$dkml_root_version" "default")

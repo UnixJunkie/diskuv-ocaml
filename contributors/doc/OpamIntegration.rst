@@ -1,8 +1,11 @@
 OPAM Integration
 ================
 
+Opam
+----
+
 Repositories
-------------
+~~~~~~~~~~~~
 
 Each Opam switch created by *Diskuv OCaml* uses the following repositories *in order*:
 
@@ -33,7 +36,7 @@ The ``default`` repository is the central Opam repository. Most of your packages
 will come directly from this repository.
 
 opam root
----------
+~~~~~~~~~
 
 Each `Opam root <http://opam.ocaml.org/doc/Manual.html#opam-root>`_ created by *Diskuv OCaml* includes
 a plugin directory ``OPAMROOT/plugins/diskuvocaml/``.
@@ -45,7 +48,7 @@ For Windows systems it contains:
 * `vcpkg <https://vcpkg.io>`_ which has the C/C++ packages needed by some OCaml packages
 
 Global Variables
-----------------
+~~~~~~~~~~~~~~~~
 
 .. note::
 
@@ -79,6 +82,101 @@ The global variables that will be present in a Diskuv OCaml installation are:
     Apparently ``cygwinports`` is a thing and used a filter in
     `ctypes-foreign <https://github.com/ocamllabs/ocaml-ctypes/blob/261fe071fad17ab323d8d2b82df2aec593e64e3f/ctypes-foreign.opam#L13>`_.
     Something similar may be good for you.
+
+C Compiler
+----------
+
+The Microsoft compiler and linker environment variables must be setup before use. Microsoft provides
+a ``vcvarsall.bat`` and ``vsdevcmd.bat`` scripts to set environment variables.
+
+We also want to include vcpkg C headers and C libraries by default, so the Microsoft
+provided environment variables ``INCLUDE`` and ``LIBPATH`` are adjusted to include vcpkg.
+
+In *Diskuv OCaml* most targets (``./makeit shell-dev``, ``./makeit build-dev``, etc.)
+have their environment variables automatically set for Microsoft C compilation inside MSYS2 in a manner
+similar to the following:
+
+.. code-block:: bash
+
+    ENV_ARGS=()
+    source vendor/diskuv-ocaml/etc/contexts/linux-build/crossplatform-functions.sh
+    autodetect_vsdev "$LOCALAPPDATA/opam/plugins/diskuvocaml/vcpkg/0.2.0/installed/x86-windows" # if 64-bit
+    autodetect_vsdev "$LOCALAPPDATA/opam/plugins/diskuvocaml/vcpkg/0.2.0/installed/x64-windows" # if 32-bit
+
+    env "${ENV_ARGS[@]}" PATH="$VSDEV_UNIQ_PATH:$PATH" bash
+
+The choice of Microsoft compiler is configured during *Diskuv OCaml* installation and made
+available at ``$env:LOCALAPPDATA\Programs\DiskuvOCaml\vsstudio.dir.txt`` (full details at
+``$env:LOCALAPPDATA\Programs\DiskuvOCaml\vsstudio.json``).
+
+There are two typical methods used to detect the C compiler during the installation of
+an OCaml package (ex. ``opam install``):
+
+* Many packages use `autoconf <https://www.gnu.org/software/autoconf/>`_ to generate a ``./configure``
+  script that will automatically detect the presence of Microsoft environment variables. Those will
+  have been set by ``autodetect_vsdev``.
+* Some packages, especially core OCaml packages like the OCaml compiler and Opam, will use
+  `msvs-tools <https://github.com/metastack/msvs-tools>`_. Recent versions of msvs-tools can detect
+  an *Diskuv OCaml* auto-installed Visual Studio Build Tools but they will not add vcpkg
+  installed packages to the INCLUDE and LIBPATH; msvs-tools may also select a more recent compiler.
+  *TODO: Fixme. In progress*
+
+OCaml Compiler
+--------------
+
+The compiler is built with Microsoft's CL.EXE. Typically OCaml packages re-use the same C compiler flags as was used by the OCaml Compiler.
+
+This comes from ``ocamlc -config`` (yours will vary slightly):
+
+.. code-block:: c-objdump
+
+    version: 4.12.0
+    standard_library_default: C:/Users/User/AppData/Local/Programs/DiskuvOCaml/0/system/_opam/lib/ocaml
+    standard_library: C:/Users/User/AppData/Local/Programs/DiskuvOCaml/0/system/_opam/lib/ocaml
+    ccomp_type: msvc
+    c_compiler: cl
+    ocamlc_cflags: -nologo -O2 -Gy- -MD
+    ocamlc_cppflags: -D_CRT_SECURE_NO_DEPRECATE
+    ocamlopt_cflags: -nologo -O2 -Gy- -MD
+    ocamlopt_cppflags: -D_CRT_SECURE_NO_DEPRECATE
+    bytecomp_c_compiler: cl -nologo -O2 -Gy- -MD -D_CRT_SECURE_NO_DEPRECATE
+    native_c_compiler: cl -nologo -O2 -Gy- -MD -D_CRT_SECURE_NO_DEPRECATE
+    bytecomp_c_libraries: advapi32.lib ws2_32.lib version.lib
+    native_c_libraries: advapi32.lib ws2_32.lib version.lib
+    native_pack_linker: link -lib -nologo -machine:AMD64  -out:
+    ranlib:
+    architecture: amd64
+    model: default
+    systhread_supported: true
+    host: x86_64-pc-windows
+    target: x86_64-pc-windows
+    flambda: false
+    safe_string: true
+    default_safe_string: true
+    flat_float_array: true
+    function_sections: false
+    afl_instrument: false
+    windows_unicode: true
+    supports_shared_libraries: true
+    exec_magic_number: Caml1999X029
+    cmi_magic_number: Caml1999I029
+    cmo_magic_number: Caml1999O029
+    cma_magic_number: Caml1999A029
+    cmx_magic_number: Caml1999Y029
+    cmxa_magic_number: Caml1999Z029
+    ast_impl_magic_number: Caml1999M029
+    ast_intf_magic_number: Caml1999N029
+    cmxs_magic_number: Caml1999D029
+    cmt_magic_number: Caml1999T029
+    linear_magic_number: Caml1999L029
+
+.. note::
+
+    `voodoos@'s <https://github.com/voodoos>`_ diagram at https://github.com/ocaml/dune/issues/3718 is one of the best pictures
+    of how Dune built packages get their compiler flags:
+
+    .. image:: https://user-images.githubusercontent.com/5031221/90496703-7aa7d080-e146-11ea-91e5-1dbed72a5b87.png
+        :width: 400
 
 Working with Native Windows
 ---------------------------

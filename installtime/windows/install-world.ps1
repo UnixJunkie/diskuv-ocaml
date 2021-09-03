@@ -9,7 +9,9 @@
 param (
     [Parameter()]
     [int]
-    $ParentProgressId = -1
+    $ParentProgressId = -1,
+    [switch]
+    $SkipAutoInstallMsBuild
 )
 
 $ErrorActionPreference = "Stop"
@@ -48,7 +50,7 @@ function Write-ProgressStep {
 $global:ProgressActivity = "Setup machine"
 Write-ProgressStep
 
-Invoke-Expression -Command "$HereDir\setup-machine.ps1 -ParentProgressId $ProgressId"
+Invoke-Expression -Command "$HereDir\setup-machine.ps1 -ParentProgressId $ProgressId -SkipAutoInstallMsBuild:`$$SkipAutoInstallMsBuild"
 
 # END Setup machine
 # ----------------------------------------------------------------

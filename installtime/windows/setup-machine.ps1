@@ -33,7 +33,9 @@
 param (
     [Parameter()]
     [int]
-    $ParentProgressId = -1
+    $ParentProgressId = -1,
+    [switch]
+    $SkipAutoInstallMsBuild
 )
 
 $ErrorActionPreference = "Stop"
@@ -48,6 +50,7 @@ if (!(Test-Path -Path $DkmlPath\.dkmlroot)) {
 $env:PSModulePath += ";$HereDir"
 Import-Module Deployers
 Import-Module Project
+Import-Module Machine
 
 # ----------------------------------------------------------------
 # Progress Reporting
@@ -82,12 +85,6 @@ function Write-ProgressCurrentOperation {
 # ----------------------------------------------------------------
 # QUICK EXIT if already current version already deployed
 
-# Magic constants that will identify new and existing deployments:
-# * Microsoft build numbers
-$Windows10SdkVer = "18362"
-
-# Consolidate the magic constants into a single deployment id
-$DeploymentId = "$Windows10SdkVer"
 
 # ----------------------------------------------------------------
 # BEGIN Start deployment
@@ -99,9 +96,21 @@ $global:ProgressStatus = "Starting ..."
 # deployment process handles an aborted setup and the necessary cleaning up of disk
 # space (eventually).
 $TempParentPath = "$Env:temp\diskuvocaml\setupmachine"
-$TempPath = Start-BlueGreenDeploy -ParentPath $TempParentPath -DeploymentId $DeploymentId -LogFunction ${function:\Write-ProgressCurrentOperation}
+$TempPath = Start-BlueGreenDeploy -ParentPath $TempParentPath -DeploymentId $MachineDeploymentId -LogFunction ${function:\Write-ProgressCurrentOperation}
 
 # END Start deployment
+# ----------------------------------------------------------------
+
+# ----------------------------------------------------------------
+# BEGIN Visual Studio Setup PowerShell Module
+
+$global:ProgressActivity = "Install Visual Studio Setup PowerShell Module"
+Write-ProgressStep
+
+Import-VSSetup -TempPath "$TempPath\vssetup"
+$ExistingVisualStudio = Get-CompatibleVisualStudio -ErrorIfNotFound:$(-not $SkipAutoInstallMsBuild)
+
+# END Visual Studio Setup PowerShell Module
 # ----------------------------------------------------------------
 
 # ----------------------------------------------------------------
@@ -137,77 +146,89 @@ $TempPath = Start-BlueGreenDeploy -ParentPath $TempParentPath -DeploymentId $Dep
 $global:ProgressActivity = "Install Visual Studio Build Tools"
 Write-ProgressStep
 
-$VsSetupAbsPath = "$TempPath\vssetup"
+if (($ExistingVisualStudio | Measure-Object).Count -eq 1) {
+    $VsInstallTempPath = "$TempPath\vsinstall"
 
-if (!(Test-Path -Path $env:SystemDrive\DiskuvOCaml\BuildTools\MSBuild\Current\Bin\MSBuild.exe) -or
-    !(Test-Path -Path "${env:ProgramFiles(x86)}\Windows Kits\10\Include\*" -Include "10.*.$Windows10SdkVer.*" -PathType Container)) {
-    # Download tools we need to install MSBuild
-    if ([Environment]::Is64BitOperatingSystem) {
-        $VsArch = "x64"
-    } else {
-        $VsArch = "x86"
-    }
-    if (!(Test-Path -Path $VsSetupAbsPath)) { New-Item -Path $VsSetupAbsPath -ItemType Directory | Out-Null }
-    if (!(Test-Path -Path $VsSetupAbsPath\vc_redist.$VsArch.exe)) { Invoke-WebRequest -Uri https://aka.ms/vs/16/release/vc_redist.$VsArch.exe -OutFile $VsSetupAbsPath\vc_redist.$VsArch.exe }
-    if (!(Test-Path -Path $VsSetupAbsPath\collect.exe)) { Invoke-WebRequest -Uri https://aka.ms/vscollect.exe                   -OutFile $VsSetupAbsPath\collect.exe }
-    if (!(Test-Path -Path $VsSetupAbsPath\VisualStudio.chman)) { Invoke-WebRequest -Uri https://aka.ms/vs/16/release/channel           -OutFile $VsSetupAbsPath\VisualStudio.chman }
-    if (!(Test-Path -Path $VsSetupAbsPath\vs_buildtools.exe)) { Invoke-WebRequest -Uri https://aka.ms/vs/16/release/vs_buildtools.exe -OutFile $VsSetupAbsPath\vs_buildtools.exe }
+    if (!(Test-Path -Path $env:SystemDrive\DiskuvOCaml\BuildTools\MSBuild\Current\Bin\MSBuild.exe) -or
+        !(Test-Path -Path "${env:ProgramFiles(x86)}\Windows Kits\10\Include\*" -Include "10.*.$Windows10SdkVer.*" -PathType Container)) {
+        # Download tools we need to install MSBuild
+        if ([Environment]::Is64BitOperatingSystem) {
+            $VsArch = "x64"
+        } else {
+            $VsArch = "x86"
+        }
+        if (!(Test-Path -Path $VsInstallTempPath)) { New-Item -Path $VsInstallTempPath -ItemType Directory | Out-Null }
+        if (!(Test-Path -Path $VsInstallTempPath\vc_redist.$VsArch.exe)) { Invoke-WebRequest -Uri https://aka.ms/vs/16/release/vc_redist.$VsArch.exe -OutFile $VsInstallTempPath\vc_redist.$VsArch.exe }
+        if (!(Test-Path -Path $VsInstallTempPath\collect.exe)) { Invoke-WebRequest -Uri https://aka.ms/vscollect.exe                   -OutFile $VsInstallTempPath\collect.exe }
+        if (!(Test-Path -Path $VsInstallTempPath\VisualStudio.chman)) { Invoke-WebRequest -Uri https://aka.ms/vs/16/release/channel           -OutFile $VsInstallTempPath\VisualStudio.chman }
+        if (!(Test-Path -Path $VsInstallTempPath\vs_buildtools.exe)) { Invoke-WebRequest -Uri https://aka.ms/vs/16/release/vs_buildtools.exe -OutFile $VsInstallTempPath\vs_buildtools.exe }
 
-    if (!(Test-Path -Path $VsSetupAbsPath\Install.orig.cmd)) { Invoke-WebRequest -Uri https://raw.githubusercontent.com/MisterDA/Windows-OCaml-Docker/d3a107132f24c05140ad84f85f187e74e83e819b/Install.cmd -OutFile $VsSetupAbsPath\Install.orig.cmd }
-    if (!(Test-Path -Path $VsSetupAbsPath\Install.cmd) -or
-        (Test-Path -Path $VsSetupAbsPath\Install.orig.cmd -NewerThan (Get-Item $VsSetupAbsPath\Install.cmd).LastWriteTime)) {
-        $content = Get-Content -Path $VsSetupAbsPath\Install.orig.cmd
-        $content = $content -replace "C:\\TEMP", "$VsSetupAbsPath"
-        $content = $content -replace "C:\\vslogs.zip", "$VsSetupAbsPath\vslogs.zip"
-        $content | Set-Content -Path $VsSetupAbsPath\Install.cmd
-    }
+        if (!(Test-Path -Path $VsInstallTempPath\Install.orig.cmd)) { Invoke-WebRequest -Uri https://raw.githubusercontent.com/MisterDA/Windows-OCaml-Docker/d3a107132f24c05140ad84f85f187e74e83e819b/Install.cmd -OutFile $VsInstallTempPath\Install.orig.cmd }
+        if (!(Test-Path -Path $VsInstallTempPath\Install.cmd) -or
+            (Test-Path -Path $VsInstallTempPath\Install.orig.cmd -NewerThan (Get-Item $VsInstallTempPath\Install.cmd).LastWriteTime)) {
+            $content = Get-Content -Path $VsInstallTempPath\Install.orig.cmd
+            $content = $content -replace "C:\\TEMP", "$VsInstallTempPath"
+            $content = $content -replace "C:\\vslogs.zip", "$VsInstallTempPath\vslogs.zip"
+            $content | Set-Content -Path $VsInstallTempPath\Install.cmd
+        }
 
-    # Create destination directory
-    if (!(Test-Path -Path $env:SystemDrive\DiskuvOCaml)) { New-Item -Path $env:SystemDrive\DiskuvOCaml -ItemType Directory | Out-Null }
+        # Create destination directory
+        if (!(Test-Path -Path $env:SystemDrive\DiskuvOCaml)) { New-Item -Path $env:SystemDrive\DiskuvOCaml -ItemType Directory | Out-Null }
 
-    # See how to use vs_buildtools.exe at
-    # https://docs.microsoft.com/en-us/visualstudio/install/use-command-line-parameters-to-install-visual-studio?view=vs-2019
+        # See how to use vs_buildtools.exe at
+        # https://docs.microsoft.com/en-us/visualstudio/install/use-command-line-parameters-to-install-visual-studio?view=vs-2019
 
-    # Components:
-    # https://docs.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-build-tools?view=vs-2019
-    #
-    # * Microsoft.VisualStudio.Component.VC.Tools.x86.x64
-    #   - VS 2019 C++ x64/x86 build tools (Latest)
-    # * Microsoft.VisualStudio.Component.Windows10SDK.18362
-    #   - Windows 10 SDK (10.0.18362.0)
-    #   - Same version in ocaml-opam Docker image as of 2021-10-10
-    $CommonArgs = @(
-        "--wait",
-        "--passive", "--norestart",
-        "--nocache",
-        "--installPath", "$env:SystemDrive\DiskuvOCaml\BuildTools",
-        "--channelUri", "$VsSetupAbsPath\VisualStudio.chman",
-        "--installChannelUri", "$VsSetupAbsPath\VisualStudio.chman",
-        "--add", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
-        "--add", "Microsoft.VisualStudio.Component.Windows10SDK.$Windows10SdkVer"
-    )
-    if (Test-Path -Path $env:SystemDrive\DiskuvOCaml\BuildTools\MSBuild\Current\Bin\MSBuild.exe) {
-        $proc = Start-Process -FilePath $VsSetupAbsPath\Install.cmd -NoNewWindow -Wait -PassThru `
-            -ArgumentList (@("$VsSetupAbsPath\vs_buildtools.exe", "modify") + $CommonArgs)
-    }
-    else {
-        $proc = Start-Process -FilePath $VsSetupAbsPath\Install.cmd -NoNewWindow -Wait -PassThru `
-            -ArgumentList (@("$VsSetupAbsPath\vs_buildtools.exe") + $CommonArgs)
-    }
-    $exitCode = $proc.ExitCode
-    if ($exitCode -eq 3010) {
-        Write-Warning "Microsoft Visual Studio Build Tools installation succeeded but a reboot is required!"
-        Start-Sleep 5
-        Write-Host ''
-        Write-Host 'Press any key to exit this script... You must reboot!';
-        $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown');
-        throw
-    }
-    elseif ($exitCode -ne 0) {
-        Write-Error "Microsoft Visual Studio Build Tools installation failed! Exited with $exitCode."
-        throw
+        # Components:
+        # https://docs.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-build-tools?view=vs-2019
+        #
+        # * Microsoft.VisualStudio.Component.VC.Tools.x86.x64
+        #   - VS 2019 C++ x64/x86 build tools (Latest)
+        # * Microsoft.VisualStudio.Component.Windows10SDK.18362
+        #   - Windows 10 SDK (10.0.18362.0)
+        #   - Same version in ocaml-opam Docker image as of 2021-10-10
+        $CommonArgs = @(
+            "--wait",
+            "--passive", "--norestart",
+            "--nocache",
+            "--installPath", "$env:SystemDrive\DiskuvOCaml\BuildTools",
+            "--channelUri", "$VsInstallTempPath\VisualStudio.chman",
+            "--installChannelUri", "$VsInstallTempPath\VisualStudio.chman",
+            "--add", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+            "--add", "Microsoft.VisualStudio.Component.Windows10SDK.$Windows10SdkVer"
+        )
+        if (Test-Path -Path $env:SystemDrive\DiskuvOCaml\BuildTools\MSBuild\Current\Bin\MSBuild.exe) {
+            $proc = Start-Process -FilePath $VsInstallTempPath\Install.cmd -NoNewWindow -Wait -PassThru `
+                -ArgumentList (@("$VsInstallTempPath\vs_buildtools.exe", "modify") + $CommonArgs)
+        }
+        else {
+            $proc = Start-Process -FilePath $VsInstallTempPath\Install.cmd -NoNewWindow -Wait -PassThru `
+                -ArgumentList (@("$VsInstallTempPath\vs_buildtools.exe") + $CommonArgs)
+        }
+        $exitCode = $proc.ExitCode
+        if ($exitCode -eq 3010) {
+            Write-Warning "Microsoft Visual Studio Build Tools installation succeeded but a reboot is required!"
+            Start-Sleep 5
+            Write-Host ''
+            Write-Host 'Press any key to exit this script... You must reboot!';
+            $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown');
+            throw
+        }
+        elseif ($exitCode -ne 0) {
+            Write-Error "Microsoft Visual Studio Build Tools installation failed! Exited with $exitCode."
+            throw
+        }
     }
 }
+
+# Reconfirm the install was detected
+if (($ExistingVisualStudio | Measure-Object).Count -eq 0) {
+    Write-Error (
+        "No compatible Visual Studio installation detected after the Visual Studio installation! " +
+        "Please file a Bug Report with https://gitlab.com/diskuv/diskuv-ocaml/-/issues"
+    )
+    exit 1
+}
+
 
 # END Visual Studio Build Tools
 # ----------------------------------------------------------------
@@ -215,7 +236,7 @@ if (!(Test-Path -Path $env:SystemDrive\DiskuvOCaml\BuildTools\MSBuild\Current\Bi
 # ----------------------------------------------------------------
 # BEGIN Stop deployment
 
-Stop-BlueGreenDeploy -ParentPath $TempParentPath -DeploymentId $DeploymentId # no -Success so always delete the temp directory
+Stop-BlueGreenDeploy -ParentPath $TempParentPath -DeploymentId $MachineDeploymentId # no -Success so always delete the temp directory
 
 # END Stop deployment
 # ----------------------------------------------------------------

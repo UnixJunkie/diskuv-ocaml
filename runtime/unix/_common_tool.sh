@@ -114,7 +114,7 @@ OPAM_PORT_FOR_SWITCHES_IN_WINDOWS=msvc
 # Pick from a msys2 variant in $DiskuvOCamlHome/etc/opam-repositories/diskuv-opam-repo
 # that aligns with the OPAM_PORT_FOR_SWITCHES_IN_WINDOWS.
 # shellcheck disable=SC2034
-OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS=4.12.0+msvc64+msys2
+OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS=4.12.0+options+dkml+msvc64
 #
 # END Opam in Windows
 #####
@@ -257,7 +257,7 @@ function _exec_dev_or_arch_helper () {
         "$DKMLDIR"/runtime/unix/within-dev -1 "${ACTUAL_PRE_HOOK:-}" "${ARGS[@]}"
         set +x
     else
-        local 
+        local
         for ARG in "$@"; do
             ARG="${ARG//@@EXPAND_TOPDIR@@//work}"
             ARG="${ARG//@@EXPAND_TOPDIR_UNIX@@//work}"
@@ -277,21 +277,6 @@ function _exec_dev_or_arch_helper () {
         if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
         "$DKMLDIR"/runtime/unix/within-sandbox -p "$SANDBOX_PLATFORM" -1 "${ACTUAL_PRE_HOOK:-}" "${ARGS[@]}"
         set +x
-    fi
-}
-
-# Set the parent directory of DiskuvOCamlHome.
-#
-# Always defined, even on Unix. It is your responsibility to check if it exists.
-#
-# Outputs:
-# - env:DKMLPARENTHOME_BUILDHOST
-function set_dkmlparenthomedir () {
-    if is_windows_build_machine; then
-        DKMLPARENTHOME_BUILDHOST="$LOCALAPPDATA\\Programs\\DiskuvOCaml"
-    else
-        # shellcheck disable=SC2034
-        DKMLPARENTHOME_BUILDHOST="${XDG_DATA_HOME:-$HOME/.local/share}/diskuv-ocaml"
     fi
 }
 

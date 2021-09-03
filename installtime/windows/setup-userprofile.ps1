@@ -111,23 +111,28 @@ $env:PSModulePath += ";$HereDir"
 Import-Module Deployers
 Import-Module Project
 Import-Module UnixInvokers
+Import-Module Machine
+
+# We will use the same standard established by C:\Users\<user>\AppData\Local\Programs\Microsoft VS Code
+$ProgramParentPath = "$env:LOCALAPPDATA\Programs\DiskuvOCaml"
+$Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
 
 # ----------------------------------------------------------------
 # Prerequisite Check
 
+# A. 64-bit check
 if (!$global:Skip64BitCheck -and ![Environment]::Is64BitOperatingSystem) {
     # This might work on 32-bit Windows, but that hasn't been tested.
     # One missing item is whether there are 32-bit Windows ocaml/opam Docker images
     throw "DiskuvOCaml is only supported on 64-bit Windows"
 }
 
-
 # ----------------------------------------------------------------
 # Progress declarations
 
 $global:ProgressStep = 0
 $global:ProgressActivity = $null
-$ProgressTotalSteps = 17
+$ProgressTotalSteps = 18
 $ProgressId = $ParentProgressId + 1
 $global:ProgressStatus = $null
 
@@ -153,6 +158,27 @@ function Write-ProgressCurrentOperation {
             -PercentComplete (100 * ($global:ProgressStep / $ProgressTotalSteps))
     }
 }
+
+# ----------------------------------------------------------------
+# BEGIN Visual Studio Setup PowerShell Module
+
+$global:ProgressActivity = "Install Visual Studio Setup PowerShell Module"
+Write-ProgressStep
+
+Import-VSSetup -TempPath "$env:TEMP\vssetup"
+$ExistingVisualStudio = Get-CompatibleVisualStudio
+if (($ExistingVisualStudio | Measure-Object).Count -eq 0) {
+    Write-Error "No compatible Visual Studio installation detected. Please run: $HereDir\setup-machine.ps1"
+    exit 1
+}
+$VisualStudioPath = ($ExistingVisualStudio | Select-Object InstallationPath -First 1).InstallationPath
+$VisualStudioDirPath = "$ProgramParentPath\vsstudio.dir.txt"
+$VisualStudioJsonPath = "$ProgramParentPath\vsstudio.json"
+[System.IO.File]::WriteAllText($VisualStudioDirPath, $VisualStudioPath, $Utf8NoBomEncoding)
+[System.IO.File]::WriteAllText($VisualStudioJsonPath, ($ExistingVisualStudio | ConvertTo-Json), $Utf8NoBomEncoding)
+
+# END Visual Studio Setup PowerShell Module
+# ----------------------------------------------------------------
 
 # ----------------------------------------------------------------
 # BEGIN Git for Windows
@@ -438,9 +464,6 @@ $DockerHash = Get-Sha256Hex16OfText -Text "$WindowsMsvcDockerImage,$WindowsMinGW
 $PackagesHash = Get-Sha256Hex16OfText -Text ($DistributionPackages -join ',')
 $BinariesHash = Get-Sha256Hex16OfText -Text ($DistributionBinaries -join ',')
 $DeploymentId = "opam-$AvailableOpamVersion;ninja-$NinjaVersion;cmake-$CMakeVersion;cygwin-$CygwinHash;msys2-$MSYS2Hash;docker-$DockerHash;pkgs-$PackagesHash;bins-$BinariesHash"
-
-# We will use the same standard established by C:\Users\<user>\AppData\Local\Programs\Microsoft VS Code
-$ProgramParentPath = "$env:LOCALAPPDATA\Programs\DiskuvOCaml"
 
 # Check if already deployed
 $finished = Get-BlueGreenDeployIsFinished -ParentPath $ProgramParentPath -DeploymentId $DeploymentId
