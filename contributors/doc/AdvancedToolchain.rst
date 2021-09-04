@@ -84,9 +84,7 @@ First we replicated the problem we had during compilation by following the boile
     [tmp]$ opam source core_kernel.v0.14.2
     [tmp]$ cd core_kernel.v0.14.2
     [core_kernel.v0.14.2]$ [[ -z "$USERPROFILE" ]] || HOME=$(cygpath -au "$USERPROFILE")
-    [core_kernel.v0.14.2]$ git init
-    [core_kernel.v0.14.2]$ git config core.safecrlf false
-    [core_kernel.v0.14.2]$ git add -A
+    [core_kernel.v0.14.2]$ git init && git config core.safecrlf false && git add -A
     [core_kernel.v0.14.2]$ git commit -m "Baseline for patch"
     [core_kernel.v0.14.2]$ git tag baseline-patch
 
@@ -408,13 +406,11 @@ our patch:
 
     cd PACKAGE_NAME.PACKAGE_VERSION
     [[ -z "$USERPROFILE" ]] || HOME=$(cygpath -au "$USERPROFILE")
-    git init
-    git config core.safecrlf false
-    git add -A
+    git init && git config core.safecrlf false && git add -A
     git commit -m "Baseline for patch"
     git tag baseline-patch
 
-*If ``git init`` fails because Git is already there, do
+*If ``git init`` fails because Git is already there, skip to
 ``git tag baseline-patch`` and then proceed to the THIRD step*
 
 THIRD, verify you can recreate the error:

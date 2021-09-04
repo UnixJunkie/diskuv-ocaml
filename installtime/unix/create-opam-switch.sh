@@ -39,13 +39,13 @@ PINNED_PACKAGES=(
 
 function usage () {
     echo "Usage:" >&2
-    echo "    create-opam-switch.sh -h                         Display this help message" >&2
-    echo "    create-opam-switch.sh -b BUILDTYPE -p PLATFORM   Create the Opam switch" >&2
-    echo "    create-opam-switch.sh -b BUILDTYPE -t TARGETDIR  Create the Opam switch in directory TARGETDIR/_opam" >&2
-    echo "    create-opam-switch.sh [-b BUILDTYPE] -s          Expert. Create the diskuv-system switch" >&2
+    echo "    create-opam-switch.sh -h                          Display this help message" >&2
+    echo "    create-opam-switch.sh -b BUILDTYPE -p PLATFORM    Create the Opam switch" >&2
+    echo "    create-opam-switch.sh -b BUILDTYPE -t OPAMSWITCH  Create the Opam switch in directory OPAMSWITCH/_opam" >&2
+    echo "    create-opam-switch.sh [-b BUILDTYPE] -s           Expert. Create the diskuv-system switch" >&2
     echo "Options:" >&2
     echo "    -p PLATFORM: The target platform or 'dev'" >&2
-    echo "    -t TARGETDIR: The target directory. A subdirectory _opam will be created for your Opam switch" >&2
+    echo "    -t OPAMSWITCH: The target Opam switch. A subdirectory _opam will be created for your Opam switch" >&2
     echo "    -s: Select the 'diskuv-system' switch" >&2
     echo "    -b BUILDTYPE: The build type which is one of:" >&2
     echo "        Debug" >&2
@@ -58,7 +58,7 @@ function usage () {
 PLATFORM=
 BUILDTYPE=
 DISKUV_SYSTEM_SWITCH=OFF
-TARGETDIR=
+TARGET_OPAMSWITCH=
 YES=OFF
 while getopts ":h:b:p:st:y" opt; do
     case ${opt} in
@@ -76,7 +76,7 @@ while getopts ":h:b:p:st:y" opt; do
             DISKUV_SYSTEM_SWITCH=ON
         ;;
         t)
-            TARGETDIR=$OPTARG
+            TARGET_OPAMSWITCH=$OPTARG
         ;;
         y)
             YES=ON
@@ -90,10 +90,10 @@ while getopts ":h:b:p:st:y" opt; do
 done
 shift $((OPTIND -1))
 
-if [[ -z "$TARGETDIR" && -z "$PLATFORM" && "$DISKUV_SYSTEM_SWITCH" = OFF ]]; then
+if [[ -z "$TARGET_OPAMSWITCH" && -z "$PLATFORM" && "$DISKUV_SYSTEM_SWITCH" = OFF ]]; then
     usage
     exit 1
-elif [[ -n "$TARGETDIR" && -z "$BUILDTYPE" ]]; then
+elif [[ -n "$TARGET_OPAMSWITCH" && -z "$BUILDTYPE" ]]; then
     usage
     exit 1
 elif [[ -n "$PLATFORM" && -z "$BUILDTYPE" ]]; then
@@ -114,12 +114,12 @@ if [[ ! -e "$DKMLDIR/.dkmlroot" ]]; then echo "FATAL: Not embedded within or lau
 if [[ "$DISKUV_SYSTEM_SWITCH" = ON ]]; then
     PLATFORM=dev
 fi
-if [[ -n "$TARGETDIR" ]]; then
+if [[ -n "$TARGET_OPAMSWITCH" ]]; then
     PLATFORM=dev
     # shellcheck disable=SC2034
     BUILDDIR="." # build directory will be the same as TOPDIR, not build/dev/Debug
     # shellcheck disable=SC2034
-    TOPDIR_CANDIDATE="$TARGETDIR"
+    TOPDIR_CANDIDATE="$TARGET_OPAMSWITCH"
 fi
 
 # shellcheck disable=SC1091
@@ -153,10 +153,19 @@ if [[ "$DISKUV_SYSTEM_SWITCH" = ON ]]; then
 
     # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND of `diskuv-system` switch
     set_opamswitchdir_of_system
+
+    OPAM_NONSWITCHCREATE_PREOPTS=(-s)
 else
     if [[ -z "${BUILDTYPE:-}" ]]; then echo "check_state nonempty BUILDTYPE" >&2; exit 1; fi
     # Set OPAMSWITCHFINALDIR_BUILDHOST, OPAMSWITCHNAME_BUILDHOST, OPAMSWITCHDIR_EXPAND, OPAMSWITCHISGLOBAL
     set_opamrootandswitchdir
+
+    OPAM_NONSWITCHCREATE_PREOPTS=(-p "$PLATFORM")
+    if [[ -n "$TARGET_OPAMSWITCH" ]]; then
+        OPAM_NONSWITCHCREATE_PREOPTS+=(-t "$TARGET_OPAMSWITCH")
+    else
+        OPAM_NONSWITCHCREATE_PREOPTS+=(-b "$BUILDTYPE")
+    fi
 fi
 
 # We'll set compiler options to:
@@ -258,17 +267,19 @@ else
     # has an upgrade. If we don't the PINNED_PACKAGES may fail.
     # We know from `diskuv-$dkml_root_version` what Diskuv OCaml version the Opam switch is using, so
     # we have the logic to detect here when it is time to upgrade!
-    "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" \
+    "$DKMLDIR"/runtime/unix/platform-opam-exec "${OPAM_NONSWITCHCREATE_PREOPTS[@]}" \
         repository list --short > "$WORK"/list
     if awk -v N="diskuv-$dkml_root_version" '$1==N {exit 1}' "$WORK"/list; then
         # Time to upgrade. We need to set the repository (almost instantaneous) and then
         # do a `opam update` so the switch has the latest repository definitions.
-        OPAM_REPO_UPGRADE_OPTS=(--switch "$OPAMSWITCHDIR_EXPAND")
+        set +u
+        OPAM_REPO_UPGRADE_OPTS=()
         if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then OPAM_REPO_UPGRADE_OPTS+=(--debug-level 2); fi
-        "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" \
+        "$DKMLDIR"/runtime/unix/platform-opam-exec "${OPAM_NONSWITCHCREATE_PREOPTS[@]}" \
             repository set-repos "${OPAM_REPO_UPGRADE_OPTS[@]}" "${OPAMREPOS_CHOICE[@]}"
-        "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" \
+        "$DKMLDIR"/runtime/unix/platform-opam-exec "${OPAM_NONSWITCHCREATE_PREOPTS[@]}" \
             update "${OPAM_REPO_UPGRADE_OPTS[@]}"
+        set -u
     fi
 fi
 
@@ -292,9 +303,8 @@ PKG_CONFIG_PATH_ADD=${PKG_CONFIG_PATH_ADD//\\/\\\\}
 
 # http://opam.ocaml.org/doc/Manual.html#Environment-updates
 # `+=` prepends to the environment variable without adding a path separator (`;` or `:`) at the end if empty
-"$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" \
-    option --switch "$OPAMSWITCHDIR_EXPAND" \
-    setenv="PKG_CONFIG_PATH += \"$PKG_CONFIG_PATH_ADD\""
+"$DKMLDIR"/runtime/unix/platform-opam-exec "${OPAM_NONSWITCHCREATE_PREOPTS[@]}" \
+    option setenv="PKG_CONFIG_PATH += \"$PKG_CONFIG_PATH_ADD\""
 
 # END opam option
 # --------------------------------
@@ -328,15 +338,6 @@ PKG_CONFIG_PATH_ADD=${PKG_CONFIG_PATH_ADD//\\/\\\\}
     if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then echo 'set -x'; fi
 } > "$WORK"/pin.sh
 
-if [[ "$DISKUV_SYSTEM_SWITCH" = ON ]]; then
-    PLATFORM_OPAM_EXEC_OPTS=(-s)
-else
-    PLATFORM_OPAM_EXEC_OPTS=(-p "$PLATFORM")
-fi
-if [[ -n "${BUILDTYPE:-}" ]]; then
-    PLATFORM_OPAM_EXEC_OPTS+=(-b "$BUILDTYPE")
-fi
-
 OPAM_PIN_ADD_ARGS=( pin add )
 if [[ "$YES" = ON ]]; then OPAM_PIN_ADD_ARGS+=( --yes ); fi
 NEED_TO_PIN=OFF
@@ -366,7 +367,8 @@ done
 # Execute all of the accumulated `opam pin add` at once
 if [[ "$NEED_TO_PIN" = ON ]]; then
     if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
-    "$DKMLDIR"/runtime/unix/platform-opam-exec "${PLATFORM_OPAM_EXEC_OPTS[@]}" exec -- bash "$WORK_EXPAND"/pin.sh "$OPAMROOTDIR_EXPAND" "$OPAMSWITCHDIR_EXPAND"
+    "$DKMLDIR"/runtime/unix/platform-opam-exec "${OPAM_NONSWITCHCREATE_PREOPTS[@]}" \
+        exec -- bash "$WORK_EXPAND"/pin.sh "$OPAMROOTDIR_EXPAND" "$OPAMSWITCHDIR_EXPAND"
 fi
 
 # END opam pin add

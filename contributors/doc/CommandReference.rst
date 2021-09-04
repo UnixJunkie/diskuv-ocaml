@@ -28,8 +28,9 @@ Usage
         # Create the Opam switch
         create-opam-switch.sh [-y] -b BUILDTYPE -p PLATFORM
 
-        # Create the Opam switch in directory `TARGETDIR/_opam`.
-        create-opam-switch.sh [-y] -b BUILDTYPE -t TARGETDIR
+        # Create the Opam switch in target directory.
+        # Opam packages will be placed in `OPAMSWITCH/_opam`
+        create-opam-switch.sh [-y] -b BUILDTYPE -t OPAMSWITCH
 
         # [Expert] Create the diskuv-system switch
         create-opam-switch.sh [-y] [-b BUILDTYPE] -s
@@ -37,10 +38,11 @@ Usage
 Option -y
     Say yes to all questions.
 
-Argument TARGETDIR
-    The target directory ``TARGETDIR`` or one of its ancestors must contain
-    a ``dune-project`` file. When a switch is created, a subdirectory ``_opam``
-    of ``TARGETDIR`` will be created that will contain your Opam switch.
+Argument OPAMSWITCH
+    The target Opam switch directory ``OPAMSWITCH`` or one of its ancestors must contain
+    a ``dune-project`` file. When the switch is created, a subdirectory ``_opam``
+    of ``OPAMSWITCH`` will be created that will contain your Opam switch packages.
+    No other files or subdirectories of ``OPAMSWITCH`` will be modified.
 
 Argument PLATFORM
     Must be ``dev``.

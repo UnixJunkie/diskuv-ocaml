@@ -43,7 +43,7 @@ if [[ -z "${TOPDIR:-}" ]]; then
     if [[ ! -e "$TOPDIR/dune-project" && ! "$TOPDIR" = "/" ]]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
     if [[ ! -e "$TOPDIR/dune-project" && ! "$TOPDIR" = "/" ]]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
     if [[ ! -e "$TOPDIR/dune-project" && ! "$TOPDIR" = "/" ]]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
-    if [[ ! -e "$TOPDIR/dune-project" ]]; then echo "FATAL: Not embedded in a Diskuv OCaml local project" >&2 ; exit 1; fi
+    if [[ ! -e "$TOPDIR/dune-project" ]]; then echo "FATAL: Not embedded in a Dune-based project with a 'dune-project' file" >&2 ; exit 1; fi
 fi
 
 # TOPDIR is sticky, so that platform-opam-exec and any other scripts can be called as children and behave correctly.

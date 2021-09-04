@@ -22,16 +22,19 @@ set -euf -o pipefail
 function usage () {
     echo "Usage:" >&2
     echo "    platform-opam-exec -h                                                         Display this help message" >&2
-    echo "    platform-opam-exec [-1] -p PLATFORM [--] install|clean|help|...               Run the opam command" >&2
+    echo "    platform-opam-exec [-1] -p PLATFORM [--] init|help|switch remove|...          Run the opam command" >&2
     echo "                                                                                  in the PLATFORM's active switch" >&2
     echo "    platform-opam-exec [-1] -p PLATFORM -b BUILDTYPE [--] install|clean|help|...  Run the opam command" >&2
     echo "                                                                                  in the PLATFORM's BUILDTYPE switch" >&2
+    echo "    platform-opam-exec [-1] -p PLATFORM                                           Run the opam command" >&2
+    echo "                            -t OPAMSWITCH [--] install|clean|help|..." >&2
     echo "    platform-opam-exec [-1] -s [--] install|clean|help|...                        Run the opam command" >&2
     echo "                                                                                  in the 'diskuv-system' switch" >&2
     echo "Options:" >&2
-    echo "       -s: Select the 'diskuv-system' switch" >&2
     echo "       -p PLATFORM: The target platform or 'dev'" >&2
+    echo "       -s: Select the 'diskuv-system' switch. If specified adds --switch to opam" >&2
     echo "       -b BUILDTYPE: Optional. The build type. If specified adds --switch to opam" >&2
+    echo "       -t OPAMSWITCH: The target Opam switch. If specified adds --switch to opam" >&2
     echo "Advanced Options:" >&2
     echo "       -1 PREHOOK: If specified, the Bash statements will be 'eval'-d twice upon" >&2
     echo "             entering the Build Sandbox _before_ any the opam command is run." >&2
@@ -68,7 +71,9 @@ PLATFORM=
 BUILDTYPE=
 DISKUV_SYSTEM_SWITCH=OFF
 PREHOOK=
-while getopts ":h1:b:sp:" opt; do
+TARGET_OPAMSWITCH=
+ADD_SWITCH_OPTS=OFF
+while getopts ":h1:b:sp:t:" opt; do
     case ${opt} in
         h )
             usage
@@ -79,9 +84,15 @@ while getopts ":h1:b:sp:" opt; do
         ;;
         b )
             BUILDTYPE=$OPTARG
+            ADD_SWITCH_OPTS=ON
         ;;
         s )
             DISKUV_SYSTEM_SWITCH=ON
+            ADD_SWITCH_OPTS=ON
+        ;;
+        t )
+            TARGET_OPAMSWITCH=$OPTARG
+            ADD_SWITCH_OPTS=ON
         ;;
         1 )
             PREHOOK=$OPTARG
@@ -183,7 +194,9 @@ fi
 
 # We check if the switch exists before we add --switch. Otherwise `opam` will complain:
 #   [ERROR] The selected switch C:/source/xxx/build/dev/Debug is not installed.
-if [[ -n "${OPAMSWITCHFINALDIR_BUILDHOST:-}" && -n "${OPAMSWITCHDIR_EXPAND:-}" ]] && is_minimal_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
+if [[ "$ADD_SWITCH_OPTS" = ON ]] &&
+   [[ -n "${OPAMSWITCHFINALDIR_BUILDHOST:-}" && -n "${OPAMSWITCHDIR_EXPAND:-}" ]] &&
+   is_minimal_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
     OPAM_OPTS+=( --switch "$OPAMSWITCHDIR_EXPAND" )
     OPAM_ENV_STMT='opam env --quiet --root "'$OPAMROOTDIR_EXPAND'" --switch "'$OPAMSWITCHDIR_EXPAND'" --set-root --set-switch'
 fi
