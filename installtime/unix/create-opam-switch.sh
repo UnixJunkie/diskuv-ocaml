@@ -39,21 +39,28 @@ PINNED_PACKAGES=(
 
 function usage () {
     echo "Usage:" >&2
-    echo "    create-opam-switch.sh -h                        Display this help message." >&2
-    echo "    create-opam-switch.sh -b BUILDTYPE -p PLATFORM  Create the Opam switch." >&2
-    echo "    create-opam-switch.sh [-b BUILDTYPE] -s         Create the diskuv-system switch." >&2
+    echo "    create-opam-switch.sh -h                         Display this help message" >&2
+    echo "    create-opam-switch.sh -b BUILDTYPE -p PLATFORM   Create the Opam switch" >&2
+    echo "    create-opam-switch.sh -b BUILDTYPE -t TARGETDIR  Create the Opam switch in directory TARGETDIR/_opam" >&2
+    echo "    create-opam-switch.sh [-b BUILDTYPE] -s          Expert. Create the diskuv-system switch" >&2
     echo "Options:" >&2
-    echo "       -p PLATFORM: The target platform or 'dev'" >&2
-    echo "       -s: Select the 'diskuv-system' switch" >&2
-    echo "       -b BUILDTYPE: Optional. The build type. If specified will create the switch" >&2
-    echo "            in the build directory that corresponds to BUILDTYPE. Otherwise creates" >&2
-    echo "            a global switch" >&2
+    echo "    -p PLATFORM: The target platform or 'dev'" >&2
+    echo "    -t TARGETDIR: The target directory. A subdirectory _opam will be created for your Opam switch" >&2
+    echo "    -s: Select the 'diskuv-system' switch" >&2
+    echo "    -b BUILDTYPE: The build type which is one of:" >&2
+    echo "        Debug" >&2
+    echo "        Release - Most optimal code. Should be faster than ReleaseCompat* builds" >&2
+    echo "        ReleaseCompatPerf - Compatibility with 'perf' monitoring tool." >&2
+    echo "        ReleaseCompatFuzz - Compatibility with 'afl' fuzzing tool." >&2
+    echo "    -y Say yes to all questions" >&2
 }
 
 PLATFORM=
 BUILDTYPE=
 DISKUV_SYSTEM_SWITCH=OFF
-while getopts ":h:b:p:s" opt; do
+TARGETDIR=
+YES=OFF
+while getopts ":h:b:p:st:y" opt; do
     case ${opt} in
         h )
             usage
@@ -68,6 +75,12 @@ while getopts ":h:b:p:s" opt; do
         s )
             DISKUV_SYSTEM_SWITCH=ON
         ;;
+        t)
+            TARGETDIR=$OPTARG
+        ;;
+        y)
+            YES=ON
+        ;;
         \? )
             echo "This is not an option: -$OPTARG" >&2
             usage
@@ -77,7 +90,10 @@ while getopts ":h:b:p:s" opt; do
 done
 shift $((OPTIND -1))
 
-if [[ -z "$PLATFORM" && "$DISKUV_SYSTEM_SWITCH" = OFF ]]; then
+if [[ -z "$TARGETDIR" && -z "$PLATFORM" && "$DISKUV_SYSTEM_SWITCH" = OFF ]]; then
+    usage
+    exit 1
+elif [[ -n "$TARGETDIR" && -z "$BUILDTYPE" ]]; then
     usage
     exit 1
 elif [[ -n "$PLATFORM" && -z "$BUILDTYPE" ]]; then
@@ -88,17 +104,26 @@ fi
 # END Command line processing
 # ------------------
 
-DKMLDIR=$(dirname "$0")
-DKMLDIR=$(cd "$DKMLDIR/../.." && pwd)
-if [[ ! -e "$DKMLDIR/.dkmlroot" ]]; then echo "FATAL: Not embedded in a 'diskuv-ocaml' repository" >&2 ; exit 1; fi
+if [[ -z "${DKMLDIR:-}" ]]; then
+    DKMLDIR=$(dirname "$0")
+    DKMLDIR=$(cd "$DKMLDIR/../.." && pwd)
+fi
+if [[ ! -e "$DKMLDIR/.dkmlroot" ]]; then echo "FATAL: Not embedded within or launched from a 'diskuv-ocaml' Local Project" >&2 ; exit 1; fi
 
 # `diskuv-system` is the host architecture, so use `dev` as its platform
 if [[ "$DISKUV_SYSTEM_SWITCH" = ON ]]; then
     PLATFORM=dev
 fi
+if [[ -n "$TARGETDIR" ]]; then
+    PLATFORM=dev
+    # shellcheck disable=SC2034
+    BUILDDIR="." # build directory will be the same as TOPDIR, not build/dev/Debug
+    # shellcheck disable=SC2034
+    TOPDIR_CANDIDATE="$TARGETDIR"
+fi
 
 # shellcheck disable=SC1091
-if [[ -n "${BUILDTYPE:-}" ]]; then
+if [[ -n "${BUILDTYPE:-}" ]] || [[ -n "${BUILDDIR:-}" ]]; then
     # shellcheck disable=SC1091
     source "$DKMLDIR"/runtime/unix/_common_build.sh
 else
@@ -128,7 +153,8 @@ if [[ "$DISKUV_SYSTEM_SWITCH" = ON ]]; then
 
     # Set OPAMSWITCHFINALDIR_BUILDHOST and OPAMSWITCHDIR_EXPAND of `diskuv-system` switch
     set_opamswitchdir_of_system
-elif [[ -n "${BUILDTYPE:-}" ]]; then
+else
+    if [[ -z "${BUILDTYPE:-}" ]]; then echo "check_state nonempty BUILDTYPE" >&2; exit 1; fi
     # Set OPAMSWITCHFINALDIR_BUILDHOST, OPAMSWITCHNAME_BUILDHOST, OPAMSWITCHDIR_EXPAND, OPAMSWITCHISGLOBAL
     set_opamrootandswitchdir
 fi
@@ -151,7 +177,7 @@ fi
 #   Since we have fine grained information about whether we are on a tiny system (ie. ARM 32-bit) we set the CFLAGS ourselves.
 # * Advanced: You can use OCAMLPARAM through `opam config set ocamlparam` (https://github.com/ocaml/opam-repository/pull/16619) or
 #   just set it in `within-dev` or `sandbox-entrypoint.sh`.
-OPAM_SWITCH_PREHOOK=
+OPAM_SWITCH_CREATE_PREHOOK=
 OCAML_OPTIONS=
 OPAM_SWITCH_CFLAGS=
 OPAM_SWITCH_CC=
@@ -191,48 +217,49 @@ if [[ $BUILDTYPE = ReleaseCompatPerf ]]; then
 elif [[ $BUILDTYPE = ReleaseCompatFuzz ]]; then
     OCAML_OPTIONS="$OCAML_OPTIONS",ocaml-option-afl
 fi
-OPAM_SWITCH_CREATE_OPTS=(
-    --yes
-)
+
+OPAM_SWITCH_CREATE_ARGS=( switch create )
+if [[ "$YES" = ON ]]; then OPAM_SWITCH_CREATE_ARGS+=( --yes ); fi
 
 if is_windows_build_machine; then
     OPAMREPOS_CHOICE=("diskuv-$dkml_root_version" "fdopen-mingw-$dkml_root_version" "default")
-    OPAM_SWITCH_CREATE_OPTS+=(
+    OPAM_SWITCH_CREATE_ARGS+=(
         --repos="diskuv-$dkml_root_version,fdopen-mingw-$dkml_root_version,default"
         --packages="ocaml-variants.$OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS$OCAML_OPTIONS"
     )
 else
     OPAMREPOS_CHOICE=("diskuv-$dkml_root_version" "default")
-    OPAM_SWITCH_CREATE_OPTS+=(
+    OPAM_SWITCH_CREATE_ARGS+=(
         --repos="diskuv-$dkml_root_version,default"
         --packages="ocaml-variants.4.12.0+options$OCAML_OPTIONS"
     )
 fi
-if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then OPAM_SWITCH_CREATE_OPTS+=(--debug-level 2); fi
+if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then OPAM_SWITCH_CREATE_ARGS+=(--debug-level 2); fi
 
 # We'll use the bash builtin `set` which quotes spaces correctly.
-OPAM_SWITCH_PREHOOK="echo OPAMSWITCH=" # Ignore any switch the developer gave. We are creating our own.
-if [[ -n "${OPAM_SWITCH_CFLAGS:-}" ]]; then OPAM_SWITCH_PREHOOK="$OPAM_SWITCH_PREHOOK; echo ';'; CFLAGS='$OPAM_SWITCH_CFLAGS'; set | grep ^CFLAGS="; fi
-if [[ -n "${OPAM_SWITCH_CC:-}" ]]; then     OPAM_SWITCH_PREHOOK="$OPAM_SWITCH_PREHOOK; echo ';';     CC='$OPAM_SWITCH_CC'    ; set | grep ^CC="; fi
-if [[ -n "${OPAM_SWITCH_ASPP:-}" ]]; then   OPAM_SWITCH_PREHOOK="$OPAM_SWITCH_PREHOOK; echo ';';   ASPP='$OPAM_SWITCH_ASPP'  ; set | grep ^ASPP="; fi
-if [[ -n "${OPAM_SWITCH_AS:-}" ]]; then     OPAM_SWITCH_PREHOOK="$OPAM_SWITCH_PREHOOK; echo ';';     AS='$OPAM_SWITCH_AS'    ; set | grep ^AS="; fi
+OPAM_SWITCH_CREATE_PREHOOK="echo OPAMSWITCH=; echo OPAM_SWITCH_PREFIX=" # Ignore any switch the developer gave. We are creating our own.
+if [[ -n "${OPAM_SWITCH_CFLAGS:-}" ]]; then OPAM_SWITCH_CREATE_PREHOOK="$OPAM_SWITCH_CREATE_PREHOOK; echo ';'; CFLAGS='$OPAM_SWITCH_CFLAGS'; set | grep ^CFLAGS="; fi
+if [[ -n "${OPAM_SWITCH_CC:-}" ]]; then     OPAM_SWITCH_CREATE_PREHOOK="$OPAM_SWITCH_CREATE_PREHOOK; echo ';';     CC='$OPAM_SWITCH_CC'    ; set | grep ^CC="; fi
+if [[ -n "${OPAM_SWITCH_ASPP:-}" ]]; then   OPAM_SWITCH_CREATE_PREHOOK="$OPAM_SWITCH_CREATE_PREHOOK; echo ';';   ASPP='$OPAM_SWITCH_ASPP'  ; set | grep ^ASPP="; fi
+if [[ -n "${OPAM_SWITCH_AS:-}" ]]; then     OPAM_SWITCH_CREATE_PREHOOK="$OPAM_SWITCH_CREATE_PREHOOK; echo ';';     AS='$OPAM_SWITCH_AS'    ; set | grep ^AS="; fi
 
 if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then echo "+ ! is_minimal_opam_switch_present \"$OPAMSWITCHFINALDIR_BUILDHOST\"" >&2; fi
 if ! is_minimal_opam_switch_present "$OPAMSWITCHFINALDIR_BUILDHOST"; then
     # clean up any partial install
-    "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" switch remove "$OPAMSWITCHDIR_EXPAND" --yes || \
+    OPAM_SWITCH_REMOVE_ARGS=( switch remove )
+    if [[ "$YES" = ON ]]; then OPAM_SWITCH_REMOVE_ARGS+=( --yes ); fi
+    "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" "${OPAM_SWITCH_REMOVE_ARGS[@]}" "$OPAMSWITCHDIR_EXPAND" || \
         rm -rf "$OPAMSWITCHFINALDIR_BUILDHOST"
     # do real install
-    "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" -1 "$OPAM_SWITCH_PREHOOK" \
-        switch create "$OPAMSWITCHDIR_EXPAND" "${OPAM_SWITCH_CREATE_OPTS[@]}"
+    "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" -1 "$OPAM_SWITCH_CREATE_PREHOOK" \
+        "${OPAM_SWITCH_CREATE_ARGS[@]}" "$OPAMSWITCHDIR_EXPAND"
 else
     # We need to upgrade each Opam switch's selected/ranked Opam repository choices whenever Diskuv OCaml
     # has an upgrade. If we don't the PINNED_PACKAGES may fail.
     # We know from `diskuv-$dkml_root_version` what Diskuv OCaml version the Opam switch is using, so
     # we have the logic to detect here when it is time to upgrade!
-    DKML_BUILD_TRACE=OFF "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" \
-        repository --switch "$OPAMSWITCHDIR_EXPAND" \
-        list --short > "$WORK"/list
+    "$DKMLDIR"/runtime/unix/platform-opam-exec -p "$PLATFORM" \
+        repository list --short > "$WORK"/list
     if awk -v N="diskuv-$dkml_root_version" '$1==N {exit 1}' "$WORK"/list; then
         # Time to upgrade. We need to set the repository (almost instantaneous) and then
         # do a `opam update` so the switch has the latest repository definitions.
@@ -310,13 +337,14 @@ if [[ -n "${BUILDTYPE:-}" ]]; then
     PLATFORM_OPAM_EXEC_OPTS+=(-b "$BUILDTYPE")
 fi
 
-OPAM_PIN_ADD_OPTS=(--yes)
+OPAM_PIN_ADD_ARGS=( pin add )
+if [[ "$YES" = ON ]]; then OPAM_PIN_ADD_ARGS+=( --yes ); fi
 NEED_TO_PIN=OFF
 
 # For Windows mimic the ocaml-opam Dockerfile by pinning `ocaml-variants` to our custom version
 if is_windows_build_machine; then
     if ! get_opam_switch_state_toplevelsection "$OPAMSWITCHFINALDIR_BUILDHOST" pinned | grep -q "ocaml-variants.$OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS"; then
-        echo "opam pin add ${OPAM_PIN_ADD_OPTS[*]} -k version ocaml-variants '$OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS'" >> "$WORK"/pin.sh
+        echo "opam ${OPAM_PIN_ADD_ARGS[*]} -k version ocaml-variants '$OCAML_VARIANT_FOR_SWITCHES_IN_WINDOWS'" >> "$WORK"/pin.sh
         NEED_TO_PIN=ON
     fi
 fi
@@ -330,7 +358,7 @@ for package_tuple in "${PINNED_PACKAGES[@]}"; do
     IFS=',' read -r package_name package_version <<< "$package_tuple"
     # accumulate
     if ! get_opam_switch_state_toplevelsection "$OPAMSWITCHFINALDIR_BUILDHOST" pinned | grep -q "$package_name.$package_version"; then
-        echo "opam pin add ${OPAM_PIN_ADD_OPTS[*]} --no-action -k version '$package_name' '$package_version'" >> "$WORK"/pin.sh
+        echo "opam ${OPAM_PIN_ADD_ARGS[*]} --no-action -k version '$package_name' '$package_version'" >> "$WORK"/pin.sh
         NEED_TO_PIN=ON
     fi
 done

@@ -24,11 +24,15 @@ function is_reproducible_platform () {
     return 0
 }
 
-if [[ ! -e "$DKMLDIR/.dkmlroot" ]]; then echo "FATAL: Not embedded in a 'diskuv-ocaml' repository" >&2 ; exit 1; fi
+if [[ ! -e "$DKMLDIR/.dkmlroot" ]]; then echo "FATAL: Not embedded within or launched from a 'diskuv-ocaml' Local Project" >&2 ; exit 1; fi
 
 if [[ -z "${TOPDIR:-}" ]]; then
     # Check at most 10 ancestors
-    TOPDIR=$(cd "$DKMLDIR"/.. && pwd)
+    if [[ -n "${TOPDIR_CANDIDATE:-}" ]]; then
+        TOPDIR=$(cd "$TOPDIR_CANDIDATE" && pwd)
+    else
+        TOPDIR=$(cd "$DKMLDIR" && cd .. && pwd) # `cd ..` works if DKMLDIR is a Windows path
+    fi
     if [[ ! -e "$TOPDIR/dune-project" && ! "$TOPDIR" = "/" ]]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
     if [[ ! -e "$TOPDIR/dune-project" && ! "$TOPDIR" = "/" ]]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
     if [[ ! -e "$TOPDIR/dune-project" && ! "$TOPDIR" = "/" ]]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
@@ -41,6 +45,9 @@ if [[ -z "${TOPDIR:-}" ]]; then
     if [[ ! -e "$TOPDIR/dune-project" && ! "$TOPDIR" = "/" ]]; then TOPDIR=$(cd "$TOPDIR"/.. && pwd); fi
     if [[ ! -e "$TOPDIR/dune-project" ]]; then echo "FATAL: Not embedded in a Diskuv OCaml local project" >&2 ; exit 1; fi
 fi
+
+# TOPDIR is sticky, so that platform-opam-exec and any other scripts can be called as children and behave correctly.
+export TOPDIR
 
 # Temporary directory that needs to be accessible inside and outside of containers so shell scripts
 # can be sent from the outside of a container into a container.

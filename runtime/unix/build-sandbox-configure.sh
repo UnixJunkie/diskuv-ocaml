@@ -51,7 +51,7 @@ if [[ -x /usr/bin/setfacl ]]; then /usr/bin/setfacl --remove-all --remove-defaul
 # -----------------------
 # BEGIN opam switch create
 
-"$DKMLDIR"/installtime/unix/create-opam-switch.sh -b "$BUILDTYPE" -p "$PLATFORM"
+"$DKMLDIR"/installtime/unix/create-opam-switch.sh -y -b "$BUILDTYPE" -p "$PLATFORM"
 
 # END opam switch create
 # -----------------------

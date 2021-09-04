@@ -84,7 +84,7 @@ fi
 DKMLDIR=$(dirname "$0")
 DKMLDIR=$(cd "$DKMLDIR"/../.. && pwd)
 
-if [[ -n "${BUILDTYPE:-}" ]]; then
+if [[ -n "${BUILDTYPE:-}" ]] || [[ -n "${BUILDDIR:-}" ]]; then
     # shellcheck disable=SC1091
     source "$DKMLDIR"/runtime/unix/_common_build.sh
 else

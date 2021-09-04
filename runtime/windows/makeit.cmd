@@ -51,10 +51,11 @@ REM * Any variables we define here will appear inside the Makefile.
 REM ==» Use DKMAKE_INTERNAL_ as prefix for all variables.
 
 REM Find .dkmlroot in an ancestor of the current scripts' directory
+REM Set DKMLDIR which is used by most Diskuv OCaml scripts through _common_tool.sh, etc.
 FOR /F "tokens=* usebackq" %%F IN (`"%DiskuvOCamlHome%\tools\apps\dkml-findup.exe",-f,%~dp0,.dkmlroot`) DO (
-SET "DKMAKE_DKMLDIR=%%F"
+SET "DKMLDIR=%%F"
 )
-if not exist "%DKMAKE_DKMLDIR%\.dkmlroot" (
+if not exist "%DKMLDIR%\.dkmlroot" (
 	echo.
 	echo.The '.dkmlroot' file was not found. Make sure you have run
 	echo.the script 'installtime\windows\install-world.ps1' once.
@@ -62,8 +63,11 @@ if not exist "%DKMAKE_DKMLDIR%\.dkmlroot" (
 	exit /b 1
 )
 
-REM Find dune-project in an ancestor of DKMLROOT so we know where the Makefile is
-FOR /F "tokens=* usebackq" %%F IN (`"%DiskuvOCamlHome%\tools\apps\dkml-findup.exe",-f,%DKMAKE_DKMLDIR%\..,dune-project`) DO (
+REM Find dune-project in an ancestor of DKMLDIR so we know where the Makefile is.
+REM We do _not_ set TOPDIR which is used by most Diskuv OCaml scripts through _common_tool.sh, etc.
+REM because the same scripts will autodetect TOPDIR if it is not set. And the developer
+REM should be able to set their own TOPDIR to create their own switches, etc.
+FOR /F "tokens=* usebackq" %%F IN (`"%DiskuvOCamlHome%\tools\apps\dkml-findup.exe",-f,%DKMLDIR%\..,dune-project`) DO (
 SET "DKMAKE_TOPDIR=%%F"
 )
 if not exist "%DKMAKE_TOPDIR%\dune-project" (

@@ -7,6 +7,8 @@
 #      the file '.dkmlroot'.
 #   TOPDIR: Optional. The project top directory containing 'dune-project'. If
 #     not specified it will be discovered from DKMLDIR.
+#   BUILDDIR: Optional. The directory that will have a _opam subdirectory containing
+#     the Opam switch. If not specified will be crafted from BUILDTYPE.
 #   PLATFORM: One of the PLATFORMS defined in TOPDIR/Makefile
 #   BUILDTYPE: One of the BUILDTYPES defined in TOPDIR/Makefile
 #
@@ -15,8 +17,13 @@
 # shellcheck disable=SC1091
 source "$DKMLDIR"/runtime/unix/_common_tool.sh
 
-# shellcheck disable=SC2034
-BUILDDIR="build/$PLATFORM/$BUILDTYPE"
+if [[ -z "${BUILDDIR:-}" ]]; then
+    # shellcheck disable=SC2034
+    BUILDDIR="build/$PLATFORM/$BUILDTYPE"
+fi
+
+# BUILDDIR is sticky, so that platform-opam-exec and any other scripts can be called as children and behave correctly.
+export BUILDDIR
 
 # Opam Windows has a weird bug where it rsyncs very very slowly all pinned directories (recursive
 # super slowness). There is a possibly related reference on https://github.com/ocaml/opam/wiki/2020-Developer-Meetings#opam-tools
@@ -29,6 +36,7 @@ USE_GLOBALLY_REGISTERED_LOCAL_SWITCHES_ON_WINDOWS=OFF
 # Inputs:
 # - env:PLATFORM
 # - env:BUILDTYPE
+# - env:BUILDDIR. Automatically set by this script if not already set.
 # Outputs:
 # - env:OPAMROOTDIR_BUILDHOST - [As per set_opamrootdir] The path to the Opam root directory that is usable only on the
 #     build machine (not from within a container)

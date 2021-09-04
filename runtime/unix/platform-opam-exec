@@ -115,7 +115,7 @@ if [[ "$DISKUV_SYSTEM_SWITCH" = ON ]]; then
     PLATFORM=dev
 fi
 
-if [[ -n "${BUILDTYPE:-}" ]]; then
+if [[ -n "${BUILDTYPE:-}" ]] || [[ -n "${BUILDDIR:-}" ]]; then
     # shellcheck disable=SC1091
     source "$DKMLDIR"/runtime/unix/_common_build.sh
 else

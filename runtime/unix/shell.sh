@@ -6,14 +6,16 @@ shift
 BUILDTYPE=$1 # may be empty
 shift
 
-DKMLDIR=$(dirname "$0")
-DKMLDIR=$(cd "$DKMLDIR/../.." && pwd)
-if [[ ! -e "$DKMLDIR/.dkmlroot" ]]; then echo "FATAL: Not embedded in a 'diskuv-ocaml' repository" >&2 ; exit 1; fi
+if [[ -z "${DKMLDIR:-}" ]]; then
+    DKMLDIR=$(dirname "$0")
+    DKMLDIR=$(cd "$DKMLDIR/../.." && pwd)
+fi
+if [[ ! -e "$DKMLDIR/.dkmlroot" ]]; then echo "FATAL: Not embedded within or launched from a 'diskuv-ocaml' Local Project" >&2 ; exit 1; fi
 if [[ -z "${TOPDIR:-}" ]]; then
     TOPDIR=$(git -C "$DKMLDIR/.." rev-parse --show-toplevel)
     TOPDIR=$(cd "$TOPDIR" && pwd)
 fi
-if [[ ! -e "$TOPDIR/dune-project" ]]; then echo "FATAL: Not embedded in a Diskuv OCaml local project" >&2 ; exit 1; fi
+if [[ ! -e "$TOPDIR/dune-project" ]]; then echo "FATAL: $TOPDIR is not a Dune project" >&2 ; exit 1; fi
 
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
@@ -84,7 +86,9 @@ fi
 
 
 # Get rid of environment variables that shouldn't be seen
-unset DKMAKE_CALLING_DIR DKMAKE_INTERNAL_MAKE MAKEFLAGS MAKE_TERMERR MAKELEVEL
+# * We don't want TOPDIR especially so user can run `create-opam-switch.sh -t .` for example withou
+#   TOPDIR interfering.
+unset DKMAKE_CALLING_DIR DKMAKE_INTERNAL_MAKE MAKEFLAGS MAKE_TERMERR MAKELEVEL TOPDIR
 
 # Must clean WORK because we are about to do an exec
 rm -rf "$WORK"

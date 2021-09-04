@@ -49,9 +49,11 @@ shift $((OPTIND -1))
 # END Command line processing
 # ------------------
 
-DKMLDIR=$(dirname "$0")
-DKMLDIR=$(cd "$DKMLDIR/../.." && pwd)
-if [[ ! -e "$DKMLDIR/.dkmlroot" ]]; then echo "FATAL: Not embedded in a 'diskuv-ocaml' repository" >&2 ; exit 1; fi
+if [[ -z "${DKMLDIR:-}" ]]; then
+    DKMLDIR=$(dirname "$0")
+    DKMLDIR=$(cd "$DKMLDIR/../.." && pwd)
+fi
+if [[ ! -e "$DKMLDIR/.dkmlroot" ]]; then echo "FATAL: Not embedded within or launched from a 'diskuv-ocaml' Local Project" >&2 ; exit 1; fi
 
 PLATFORM=dev # not actually in the dev platform but we are just pulling the "common" tool functions (so we can choose whatever platform we like)
 
