@@ -213,12 +213,6 @@ platform_vcpkg_triplet
 VCPKG_UNIX="$DKMLPLUGIN_BUILDHOST/vcpkg/$dkml_root_version"
 is_windows_build_machine && VCPKG_UNIX=$(cygpath -au "$VCPKG_UNIX")
 
-if is_windows_build_machine; then
-    VCPKG_INSTALL=("$VCPKG_UNIX"/vcpkg.exe install --triplet="$PLATFORM_VCPKG_TRIPLET")
-else
-    VCPKG_INSTALL=("$VCPKG_UNIX"/vcpkg install --triplet="$PLATFORM_VCPKG_TRIPLET")
-fi
-
 # shellcheck disable=SC2154
 install -d "$VCPKG_UNIX"
 
@@ -266,9 +260,36 @@ fi
 
 # Install vcpkg packages
 
-if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
-"${VCPKG_INSTALL[@]}" "${VCPKG_PKGS[@]}"
-set +x
+if [[ -e vcpkg.json ]]; then
+    # https://vcpkg.io/en/docs/users/manifests.html
+    # The project in $TOPDIR is a vcpkg manifest project; these are now recommended
+    # by vcpkg. The dependencies are listed in vcpkg.json, with no tool to edit it.
+
+    # 1. Install the project dependencies using the triplet we need.
+    if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
+    "$VCPKG_UNIX"/vcpkg install --triplet="$PLATFORM_VCPKG_TRIPLET"
+    set +x
+
+    # 2. Validate we have all necessary dependencies
+    # | awk -v PKGNAME=sqlite3 -v TRIPLET=x64-windows '$1==(PKGNAME ":" TRIPLET) {print $1}'
+    "$VCPKG_UNIX"/vcpkg list | awk '{print $1}' | grep ":$PLATFORM_VCPKG_TRIPLET$" | sed 's,:[^:]*,,' | sort -u > "$WORK"/vcpkg.have
+    echo "${VCPKG_PKGS[@]}" | xargs -n1 | sort -u > "$WORK"/vcpkg.need
+    comm -13 "$WORK"/vcpkg.have "$WORK"/vcpkg.need > "$WORK"/vcpkg.missing
+    if [[ -s "$WORK"/vcpkg.missing ]]; then
+        ERRFILE=$TOPDIR/vcpkg.json
+        if is_windows_build_machine; then ERRFILE=$(cygpath -aw "$ERRFILE"); fi
+        echo "FATAL: The following vcpkg dependencies are required for Diskuv OCaml but missing from $ERRFILE:" >&2
+        cat "$WORK"/vcpkg.missing >&2
+        echo ">>> Please add in the missing dependencies. Docs at https://vcpkg.io/en/docs/users/manifests.html"
+        exit 1
+    fi
+else
+    # Non vcpkg-manifest project. All packages will be installed in the
+    # "system" ($VCPKG_UNIX).
+    if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then set -x; fi
+    "$VCPKG_UNIX"/vcpkg install "${VCPKG_PKGS[@]}" --triplet="$PLATFORM_VCPKG_TRIPLET"
+    set +x
+fi
 
 # Copy pkgconf.exe to pkg-config.exe since not provided
 # automatically. https://github.com/pkgconf/pkgconf#pkg-config-symlink
