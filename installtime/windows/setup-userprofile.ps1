@@ -132,7 +132,7 @@ if (!$global:Skip64BitCheck -and ![Environment]::Is64BitOperatingSystem) {
 
 $global:ProgressStep = 0
 $global:ProgressActivity = $null
-$ProgressTotalSteps = 18
+$ProgressTotalSteps = 17
 $ProgressId = $ParentProgressId + 1
 $global:ProgressStatus = $null
 
@@ -277,7 +277,7 @@ $GitPath = (get-item "$GitExe").Directory.FullName
 
 # Magic constants that will identify new and existing deployments:
 # * Immutable git tags
-$AvailableOpamVersion = "2.1.0.msys2.6" # needs to be a real Opam tag in https://github.com/diskuv/opam!
+$AvailableOpamVersion = "2.1.0.msys2.7" # needs to be a real Opam tag in https://github.com/diskuv/opam!
 $NinjaVersion = "1.10.2"
 $CMakeVersion = "3.21.1"
 $LibffiVersion = "3.4.2"
@@ -1113,37 +1113,6 @@ try {
     }
 
     # END opam install `diskuv-system` to Programs
-    # ----------------------------------------------------------------
-
-    # ----------------------------------------------------------------
-    # BEGIN Remove extended ACL
-
-    # Cygwin uses Windows ACLs attached to files and directories that
-    # native Windows executables do not use. (See https://cygwin.com/cygwin-ug-net/using-filemodes.html)
-    #
-    # Typically MSYS2 does not use those Windows ACL either but it can be turned on with the MSYS environment variable.
-    #
-    # 1. We do **not** presume we are the only Cygwin / MSYS2 installation so we will **not** modify the
-    # CYGWIN and MSYS environment variables. For example, the widely used Git for Windows uses MSYS underneath.
-    # 2. You may think to use /etc/fstab but the reading of the 'noacl' option is done at the _first_
-    # read of /etc/fstab by cygwin1.dll or msys-2.0.dll which may not be our Cygwin / MSYS2 installation.
-    # So that approach is unreliable.
-    #
-    # We instead forcibly remove extended ACLs with `setfacl`.
-
-    $global:ProgressActivity = "Remove extended ACLs"
-    Write-ProgressStep
-
-    $DiskuvBootCygwinAbsPath = & $CygwinRootPath\bin\cygpath.exe -au "$env:LOCALAPPDATA\opam\diskuv-boot-DO-NOT-DELETE"
-    Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "find '$DiskuvBootCygwinAbsPath' -print0 | xargs -0 --no-run-if-empty setfacl --remove-all --remove-default"
-
-    $ProgramCygwinAbsPath = & $CygwinRootPath\bin\cygpath.exe -au "$ProgramPath"
-    # Note: We get a lot of `setfacl: Permission denied` and a few `setfacl: No such file or directory`.
-    # Not sure how to remove them, so will just use `|| true` to ignore the failures.
-    Invoke-CygwinCommandWithProgress -CygwinDir $CygwinRootPath -Command "find '$ProgramCygwinAbsPath' -print0 | xargs -0 --no-run-if-empty setfacl --remove-all --remove-default || true"
-
-
-    # END Remove extended ACL
     # ----------------------------------------------------------------
 
     # ----------------------------------------------------------------
