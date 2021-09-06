@@ -52,6 +52,14 @@ Import-Module Deployers
 Import-Module Project
 Import-Module Machine
 
+# Make sure not Run as Administrator
+$currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+if ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Write-Error -Category SecurityError `
+        -Message "You are in an PowerShell Run as Administrator session. Please run $HereScript from a non-Administrator PowerShell session."
+    exit 1
+}
+
 # ----------------------------------------------------------------
 # Progress Reporting
 
