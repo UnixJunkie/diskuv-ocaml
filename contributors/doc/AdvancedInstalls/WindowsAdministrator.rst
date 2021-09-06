@@ -17,7 +17,7 @@ as everybody else.
         -Scope Process `
         -Force
 
-    PS> installtime\windows\setup-machine.ps
+    PS> installtime\windows\setup-machine.ps1
 
 The Administrator portion takes 2GB of disk space while each user can take up to 25GB of disk space in their User
 Profiles (``$env:LOCALAPPDATA\Programs\DiskuvOCaml`` and ``$env:LOCALAPPDATA\opam``) just for the basic *Diskuv OCaml*
