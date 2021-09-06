@@ -301,16 +301,27 @@ fi
 # Opam `PKG_CONFIG_PATH += "xxx"` requires that `xxx` is a valid Opam string. Escape all the backslashes.
 PKG_CONFIG_PATH_ADD=${PKG_CONFIG_PATH_ADD//\\/\\\\}
 
-# http://opam.ocaml.org/doc/Manual.html#Environment-updates
-# `+=` prepends to the environment variable without adding a path separator (`;` or `:`) at the end if empty
+# Two operators: option setenv(OP1)"NAME OP2 VALUE"
+#
+# OP1
+# ---
+#   `=` will reset and `+=` will append (from opam option --help)
+#
+# OP2
+# ---
+#   http://opam.ocaml.org/doc/Manual.html#Environment-updates
+#   `+=` prepends to the environment variable without adding a path separator (`;` or `:`) at the end if empty
+#
+# NAME
+# ----
 # 1. PKG_CONFIG_PATH
 # 2. LUV_USE_SYSTEM_LIBUV=yes if Windows which uses vcpkg. See https://github.com/aantron/luv#external-libuv
-OPAM_OPTION_SETENV="PKG_CONFIG_PATH += \"$PKG_CONFIG_PATH_ADD\""
-if is_windows_build_machine; then
-    OPAM_OPTION_SETENV="$OPAM_OPTION_SETENV; LUV_USE_SYSTEM_LIBUV=yes"
-fi
 "$DKMLDIR"/runtime/unix/platform-opam-exec "${OPAM_NONSWITCHCREATE_PREOPTS[@]}" \
-    option setenv="$OPAM_OPTION_SETENV"
+    option setenv="PKG_CONFIG_PATH += \"$PKG_CONFIG_PATH_ADD\""
+if is_windows_build_machine; then
+    "$DKMLDIR"/runtime/unix/platform-opam-exec "${OPAM_NONSWITCHCREATE_PREOPTS[@]}" \
+        option setenv+="LUV_USE_SYSTEM_LIBUV = \"yes\""
+fi
 
 # END opam option
 # --------------------------------

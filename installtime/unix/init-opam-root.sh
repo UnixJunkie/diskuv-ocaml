@@ -19,7 +19,7 @@
 set -euf -o pipefail
 
 VCPKG_VER="2021.05.12"
-VCPKG_PKGS=(libffi libuv)
+VCPKG_PKGS=(pkgconf libffi libuv)
 
 # shellcheck disable=SC2034
 PLATFORM=$1
