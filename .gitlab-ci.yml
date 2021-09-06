@@ -1,18 +1,55 @@
-image: python:3.9-alpine
+.shared_windows_runners:
+  tags:
+    - shared-windows
+    - windows
+    - windows-1809
+  before_script:
+    # Docs: https://www.msys2.org/docs/ci/#docker
+    # also an example at https://patchew.org/QEMU/20210709075218.1796207-1-thuth@redhat.com/
+    - '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;
+       Invoke-WebRequest -UseBasicParsing -uri "https://github.com/msys2/msys2-installer/releases/download/nightly-x86_64/msys2-base-x86_64-latest.sfx.exe" -OutFile msys2.exe'
+    - .\msys2.exe -y -oC:\
+    - Remove-Item msys2.exe
+    - ((Get-Content -path C:\msys64\etc\\post-install\\07-pacman-key.post -Raw)
+        -replace '--refresh-keys', '--version') |
+        Set-Content -Path C:\msys64\etc\\post-install\\07-pacman-key.post
+    - function msys() { C:\msys64\usr\bin\bash.exe @('-lc') + @Args; }
+    - msys "sed -i 's/^CheckSpace/#CheckSpace/g' /etc/pacman.conf"
+    - msys ' ' # https://www.msys2.org/docs/ci/#docker has this; probably to auto-create home directory
+    - msys 'pacman --noconfirm -Syuu' # Core update
+    - msys 'pacman --noconfirm -Syuu' # Normal update
+    - msys 'pacman --noconfirm -Scc'  # Cleans the entire package cache
+    - taskkill /F /FI "MODULES eq msys-2.0.dll" # Stops any background services that pacman started, if any
+
+default:
+  image: python:3.9-alpine
+
+  before_script:
+    - apk add --no-cache make rsync
+    - pip install -U sphinx sphinx_rtd_theme
 
 workflow:
   rules:
     - if: '$CI_COMMIT_BRANCH'
 
-before_script:
-  - apk add --no-cache make rsync
-  - pip install -U sphinx sphinx_rtd_theme
+build-opam:
+  extends:
+  - .shared_windows_runners
+  stage: build
+  script:
+    - $env:CHERE_INVOKING = 'yes'  # Preserve the current working directory
+    - $env:MSYSTEM = 'MSYS2'       # Start a 64 bit MSYS2 (not MinGW) environment
+    - C:\msys64\usr\bin\bash -lc 'date; pwd'
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "build-opam"'
 
-test:
+test:  
   stage: test
   script:
   - echo Building Sphinx html twice so that Sphinx cross-references work ...
   - make -C contributors html ; make -C contributors html O="-W"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
 
 pages:
   stage: deploy
