@@ -72,6 +72,7 @@ set_dkmlparenthomedir
 # edit the repository for `AdvancedToolchain.rst` patching. We could have done
 # both with HTTP(S) but simpler is usually better.
 
+# shellcheck disable=SC2154
 install -d "$DKMLPARENTHOME_BUILDHOST/opam-repositories/$dkml_root_version"
 RSYNC_OPTS=(-a); if [[ "${DKML_BUILD_TRACE:-ON}" = ON ]]; then RSYNC_OPTS+=(--progress); fi
 if is_windows_build_machine; then
@@ -291,11 +292,20 @@ else
     set +x
 fi
 
+# ---fixup pkgconf----
+
 # Copy pkgconf.exe to pkg-config.exe since not provided
 # automatically. https://github.com/pkgconf/pkgconf#pkg-config-symlink
 
 install "$VCPKG_UNIX"/installed/"$PLATFORM_VCPKG_TRIPLET"/tools/pkgconf/pkgconf.exe \
     "$VCPKG_UNIX"/installed/"$PLATFORM_VCPKG_TRIPLET"/tools/pkgconf/pkg-config.exe
+
+# ---fixup libuv----
+
+# If you use official CMake build of libuv, it produces uv.lib not libuv.lib used by vcpkg.
+
+install "$VCPKG_UNIX"/installed/"$PLATFORM_VCPKG_TRIPLET"/lib/libuv.lib \
+    "$VCPKG_UNIX"/installed/"$PLATFORM_VCPKG_TRIPLET"/lib/uv.lib
 
 # END install vcpkg packages
 # -----------------------
